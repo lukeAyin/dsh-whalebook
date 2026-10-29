@@ -1,14 +1,24 @@
 /**
- * 待办面板的挂载与生命周期：取数、提交、跟随宠物定位、点外与 Esc 关闭。
+ * 待办面板的挂载与生命周期：取数、提交、行内编辑、无操作自动收起、点外/Esc 关闭与跟随定位。
  *
- * 只负责一次弹窗：骨架与列表在 ./render，定位在 ./position，HTTP 在 ./api。
+ * 只负责一次弹窗：骨架与列表在 ./render，输入校验在 ./edit，定位在 ./position，HTTP 在 ./api。
  * 全页同时只允许一个面板；点宠物命中区不算「点外面」，好让再次点击宠物由调用方收起面板。
+ * 自动收起不会打断编辑或请求：编辑中、请求中、指针悬停、焦点在面板内时都会顺延。
  * @module dsh-whalebook/src/shared/todo/panel
  */
 import { TODOS_PATH, addTodo, loadTodos, patchTodo, removeTodo, type TodoResult } from './api.ts';
-import { parseDateTimeLocal } from './format.ts';
+import { parseEditDraft } from './edit.ts';
+import { formatDateTimeLocal } from './format.ts';
 import { placeTodoPanel, type AnchorRect } from './position.ts';
-import { createTodoPanelParts, renderTodoList, setTodoBusy, setTodoError, type TodoListHandlers } from './render.ts';
+import {
+  createTodoPanelParts,
+  renderTodoList,
+  setTodoBusy,
+  setTodoError,
+  type TodoEditDraft,
+  type TodoEditing,
+  type TodoListHandlers,
+} from './render.ts';
 import { injectTodoCss } from './styles.ts';
 import type { TodoItem } from './types.ts';
 
@@ -20,7 +30,7 @@ export interface TodoPanelOptions {
   anchorEl?: HTMLElement | null;
   /** 接口基址；桌面端可传绝对地址，缺省走同源前缀。 */
   baseUrl?: string;
-  /** 面板关闭后调用（点外 / Esc / 关闭按钮 / 再次挂载顶掉旧面板都会触发一次）。 */
+  /** 面板关闭后调用（点外 / Esc / 关闭按钮 / 自动收起 / 再次挂载顶掉旧面板都会触发一次）。 */
   onClose?: () => void;
 }
 
@@ -34,6 +44,9 @@ export interface TodoPanelMount {
 
 /** 跟随宠物位置的巡检间隔（ms）：宠物会自己走位，面板得跟着挪。 */
 const FOLLOW_MS = 200;
+
+/** 无操作自动收起的时长（ms）：面板不该一直占着屏幕。 */
+const AUTO_DISMISS_MS = 45 * 1000;
 
 /** 当前打开的面板；全页唯一。 */
 let active: TodoPanelMount | null = null;
@@ -53,13 +66,46 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
   let closed = false;
   let busy = false;
   let todos: TodoItem[] = [];
+  let editing: TodoEditing | null = null;
   let followTimer: number | null = null;
+  let idleTimer: number | null = null;
   let mount: TodoPanelMount | null = null;
 
-  /** 关闭并清理：监听、跟随定时器、根节点与单例引用一起收。 */
+  /** 取消自动收起计时。 */
+  function clearIdle(): void {
+    if (idleTimer !== null) window.clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+
+  /** 重新起算无操作时间；编辑/请求/悬停/焦点在内时顺延而不是收起。 */
+  function armIdle(): void {
+    clearIdle();
+    if (closed) return;
+    idleTimer = window.setTimeout(() => {
+      idleTimer = null;
+      if (closed) return;
+      if (editing !== null || busy || parts.root.matches(':hover')) {
+        armIdle();
+        return;
+      }
+      if (parts.root.contains(document.activeElement)) {
+        armIdle();
+        return;
+      }
+      close();
+    }, AUTO_DISMISS_MS);
+  }
+
+  /** 面板里有交互就重新计时。 */
+  function noteActivity(): void {
+    if (!closed) armIdle();
+  }
+
+  /** 关闭并清理：监听、跟随/自动收起定时器、根节点与单例引用一起收。 */
   function close(): void {
     if (closed) return;
     closed = true;
+    clearIdle();
     if (followTimer !== null) window.clearInterval(followTimer);
     followTimer = null;
     window.removeEventListener('resize', place);
@@ -81,13 +127,57 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
     const point = placeTodoPanel(anchor, size, { width: window.innerWidth, height: window.innerHeight });
     parts.root.style.left = point.left + 'px';
     parts.root.style.top = point.top + 'px';
+    // 只用于调试/端到端断言：正常位置不与宠物相交，overlap 表示视口太小只能兜底。
+    parts.root.dataset.side = point.side;
   }
 
-  // 三个函数互相引用（列表回调 → 修改 → 重拉 → 渲染）：mutate / reload 用函数声明提升，
-  // 回调里引用它们不会在构造期求值，也就不存在初始化顺序问题。
+  /** 渲染清单；编辑态下把焦点放回正文输入框，光标停在末尾。 */
+  function render(): void {
+    renderTodoList(parts, todos, handlers, Date.now(), editing);
+    if (editing === null) return;
+    const input = parts.root.querySelector<HTMLInputElement>('.dsh-whalebook-todo-edit-text');
+    if (!input) return;
+    input.focus();
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
+  }
+
+  // 列表回调 → 修改 → 重拉 → 渲染互相引用：mutate/reload 用函数声明提升，回调里引用不会在构造期求值。
   const handlers: TodoListHandlers = {
     onToggle: (todo, done) => void mutate(() => patchTodo(todo.id, { done }, baseUrl)),
     onDelete: (todo) => void mutate(() => removeTodo(todo.id, baseUrl)),
+    onStartEdit: (todo) => {
+      if (busy) return;
+      clearIdle();
+      editing = {
+        id: todo.id,
+        text: todo.text,
+        due: todo.dueAt === null ? '' : formatDateTimeLocal(todo.dueAt),
+      };
+      setTodoError(parts, null);
+      render();
+    },
+    onSaveEdit: (todo, draft: TodoEditDraft) => {
+      const parsed = parseEditDraft(draft);
+      if (!parsed.ok) {
+        setTodoError(parts, parsed.message);
+        const input = parts.root.querySelector<HTMLInputElement>('.dsh-whalebook-todo-edit-text');
+        input?.focus();
+        return;
+      }
+      void mutate(async () => {
+        const result = await patchTodo(todo.id, { text: parsed.text, dueAt: parsed.dueAt }, baseUrl);
+        if (result.ok) editing = null;
+        return result;
+      });
+    },
+    onCancelEdit: () => {
+      if (editing === null) return;
+      editing = null;
+      setTodoError(parts, null);
+      render();
+      armIdle();
+    },
   };
 
   /** 重新拉整张清单：修改一律以宿主返回为准，不在本地猜结果。 */
@@ -103,13 +193,14 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
     }
     todos = result.value;
     setTodoError(parts, null);
-    renderTodoList(parts, todos, handlers, Date.now());
+    render();
   }
 
   /** 串行执行一次修改：请求在途时禁止再次提交，成功后统一重拉。 */
   async function mutate(task: () => Promise<TodoResult<unknown>>): Promise<void> {
     if (closed || busy) return;
     busy = true;
+    clearIdle();
     setTodoBusy(parts, true);
     setTodoError(parts, null);
     const result = await task();
@@ -118,26 +209,23 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
     setTodoBusy(parts, false);
     if (!result.ok) {
       setTodoError(parts, result.message);
+      armIdle();
       return;
     }
     await reload();
+    if (!closed) armIdle();
   }
 
-  /** 提交新增：空正文直接回到输入框，非法时间不提交。 */
+  /** 提交新增：空正文/非法时间由 parseEditDraft 统一拦截。 */
   const submitAdd = (): void => {
-    const text = parts.input.value.trim();
-    if (text === '') {
+    const parsed = parseEditDraft({ text: parts.input.value, due: parts.due.value });
+    if (!parsed.ok) {
+      setTodoError(parts, parsed.message);
       parts.input.focus();
       return;
     }
-    const dueText = parts.due.value.trim();
-    const dueAt = dueText === '' ? null : parseDateTimeLocal(dueText);
-    if (dueText !== '' && dueAt === null) {
-      setTodoError(parts, '这个时间看不懂，重新选一个吧');
-      return;
-    }
     void mutate(async () => {
-      const result = await addTodo(text, dueAt, baseUrl);
+      const result = await addTodo(parsed.text, parsed.dueAt, baseUrl);
       if (result.ok) {
         parts.input.value = '';
         parts.due.value = '';
@@ -157,7 +245,18 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
   };
 
   const onDocKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape') close();
+    if (event.key !== 'Escape') return;
+    // 编辑中先退编辑，再按一次 Esc 才收面板。
+    if (editing !== null) {
+      event.preventDefault();
+      event.stopPropagation();
+      editing = null;
+      setTodoError(parts, null);
+      render();
+      armIdle();
+      return;
+    }
+    close();
   };
 
   parts.form.addEventListener('submit', (event) => {
@@ -165,6 +264,9 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
     submitAdd();
   });
   parts.closeButton.addEventListener('click', close);
+  // 面板内任何按下/按键都视为「还在用」，重新开始无操作计时。
+  parts.root.addEventListener('pointerdown', noteActivity, true);
+  parts.root.addEventListener('keydown', noteActivity, true);
   parts.empty.textContent = '加载中…';
   parts.empty.hidden = false;
 
@@ -181,6 +283,7 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
   if (!closed) {
     followTimer = window.setInterval(place, FOLLOW_MS);
     // 不自动聚焦输入框：单击宠物通常只是想摸摸它，抢走 DSH 输入框的焦点比少一次点击更烦。
+    armIdle();
     void reload();
   }
   return mount;
