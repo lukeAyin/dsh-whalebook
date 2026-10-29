@@ -193,8 +193,9 @@ Object.assign(PetSprite.prototype, {
     window.addEventListener(
       'blur',
       () => {
-        // 切到其它应用后旧菜单不该继续占着透明窗口；丢失松手时也释放拖拽。
+        // 切到其它应用后旧菜单/待办面板不该继续占着透明窗口；丢失松手时也释放拖拽。
         this.closeMenu();
+        if (this.todoClose) this.todoClose();
         if (this.dragState.active) this.onPointerUp();
         if (!this.chatOpen && !this.todoOpen) this.setInteractive(false);
       },

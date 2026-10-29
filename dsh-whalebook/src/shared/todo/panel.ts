@@ -31,8 +31,23 @@ export interface TodoPanelOptions {
   anchorEl?: HTMLElement | null;
   /** 接口基址；桌面端可传绝对地址，缺省走同源前缀。 */
   baseUrl?: string;
+  /** true = 只走左右侧（桌面端），避免竖向遮住宠物。 */
+  horizontalOnly?: boolean;
+  /**
+   * 可视区域（窗口局部坐标）。桌面窗口可能有一部分在屏幕外，定位要按屏幕可见区夹取，
+   * 否则宠物靠近屏幕右缘时面板会被放到屏幕外。缺省 = 整个窗口。
+   */
+  viewport?: () => TodoViewport;
   /** 面板关闭后调用（点外 / Esc / 关闭按钮 / 自动收起 / 再次挂载顶掉旧面板都会触发一次）。 */
   onClose?: () => void;
+}
+
+/** 定位用的可视区域（窗口局部坐标）。 */
+export interface TodoViewport {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 }
 
 /** 面板挂载句柄。 */
@@ -128,9 +143,27 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
       return;
     }
     const size = { width: parts.root.offsetWidth, height: parts.root.offsetHeight };
-    const point = placeTodoPanel(anchor, size, { width: window.innerWidth, height: window.innerHeight });
-    parts.root.style.left = point.left + 'px';
-    parts.root.style.top = point.top + 'px';
+    // 桌面窗口可能跨出屏幕：把锚点换算到「可见区」坐标系里定位，再把落点加回窗口坐标。
+    const visible = options.viewport?.() ?? {
+      left: 0,
+      top: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+    const localAnchor = {
+      left: anchor.left - visible.left,
+      top: anchor.top - visible.top,
+      right: anchor.right - visible.left,
+      bottom: anchor.bottom - visible.top,
+    };
+    const point = placeTodoPanel(
+      localAnchor,
+      size,
+      { width: visible.width, height: visible.height },
+      { horizontalOnly: options.horizontalOnly },
+    );
+    parts.root.style.left = point.left + visible.left + 'px';
+    parts.root.style.top = point.top + visible.top + 'px';
     // 只用于调试/端到端断言：正常位置不与宠物相交，overlap 表示视口太小只能兜底。
     parts.root.dataset.side = point.side;
   }

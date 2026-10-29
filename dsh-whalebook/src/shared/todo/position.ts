@@ -37,10 +37,16 @@ export interface Placement {
 }
 
 /** 面板与命中区的间距（px）。 */
-export const PANEL_GAP_PX = 12;
+export const PANEL_GAP_PX = 3;
 
 /** 面板与视口边缘的最小留白（px）。 */
 export const VIEWPORT_MARGIN_PX = 8;
+
+/** 定位策略：桌面端固定只走左右；默认仍允许上下优先。 */
+export interface PlacementOptions {
+  /** true = 只尝试左右侧，不再上下翻转（避免竖向覆盖宠物）。 */
+  horizontalOnly?: boolean;
+}
 
 /** 把值夹进 [min, max]；max 小于 min 时取 min（面板比视口还大时至少露出左上角）。 */
 function clamp(value: number, min: number, max: number): number {
@@ -58,9 +64,45 @@ function clamp(value: number, min: number, max: number): number {
  * @param viewport - 视口尺寸。
  * @returns 左上角坐标与所在侧，供调用方写 style / 调试。
  */
-export function placeTodoPanel(anchor: AnchorRect, panel: PanelSize, viewport: ViewportSize): Placement {
+export function placeTodoPanel(
+  anchor: AnchorRect,
+  panel: PanelSize,
+  viewport: ViewportSize,
+  options: PlacementOptions = {},
+): Placement {
   const maxLeft = viewport.width - panel.width - VIEWPORT_MARGIN_PX;
   const centeredLeft = clamp((anchor.left + anchor.right) / 2 - panel.width / 2, VIEWPORT_MARGIN_PX, maxLeft);
+  const centerX = (anchor.left + anchor.right) / 2;
+  const centerY = (anchor.top + anchor.bottom) / 2;
+  const maxTop = viewport.height - panel.height - VIEWPORT_MARGIN_PX;
+  const sideTop = clamp(centerY - panel.height / 2, VIEWPORT_MARGIN_PX, Math.max(VIEWPORT_MARGIN_PX, maxTop));
+  const rightLeft = anchor.right + PANEL_GAP_PX;
+  const leftLeft = anchor.left - PANEL_GAP_PX - panel.width;
+  const rightFits = maxTop >= VIEWPORT_MARGIN_PX && rightLeft + panel.width <= viewport.width - VIEWPORT_MARGIN_PX;
+  const leftFits = maxTop >= VIEWPORT_MARGIN_PX && leftLeft >= VIEWPORT_MARGIN_PX;
+
+  if (options.horizontalOnly === true) {
+    // 靠左显示右、靠右显示左；首选侧放不下再换另一侧，绝不上下翻转。
+    const preferRight = centerX < viewport.width / 2;
+    const candidates = preferRight
+      ? [
+          { side: 'right' as const, left: rightLeft, fits: rightFits },
+          { side: 'left' as const, left: leftLeft, fits: leftFits },
+        ]
+      : [
+          { side: 'left' as const, left: leftLeft, fits: leftFits },
+          { side: 'right' as const, left: rightLeft, fits: rightFits },
+        ];
+    for (const candidate of candidates) {
+      if (candidate.fits) return { left: candidate.left, top: sideTop, side: candidate.side };
+    }
+    // 两侧都放不下：夹回视口，标记 overlap 供调用方/调试识别。
+    return {
+      left: clamp(preferRight ? rightLeft : leftLeft, VIEWPORT_MARGIN_PX, maxLeft),
+      top: sideTop,
+      side: 'overlap',
+    };
+  }
 
   const aboveTop = anchor.top - panel.height - PANEL_GAP_PX;
   if (aboveTop >= VIEWPORT_MARGIN_PX) return { left: centeredLeft, top: aboveTop, side: 'above' };
@@ -70,17 +112,8 @@ export function placeTodoPanel(anchor: AnchorRect, panel: PanelSize, viewport: V
     return { left: centeredLeft, top: belowTop, side: 'below' };
   }
 
-  // 侧边：高度必须放得下，否则贴左/右也还是会被视口裁掉。
-  const maxTop = viewport.height - panel.height - VIEWPORT_MARGIN_PX;
-  if (maxTop >= VIEWPORT_MARGIN_PX) {
-    const centeredTop = clamp((anchor.top + anchor.bottom) / 2 - panel.height / 2, VIEWPORT_MARGIN_PX, maxTop);
-    const rightLeft = anchor.right + PANEL_GAP_PX;
-    if (rightLeft + panel.width <= viewport.width - VIEWPORT_MARGIN_PX) {
-      return { left: rightLeft, top: centeredTop, side: 'right' };
-    }
-    const leftLeft = anchor.left - PANEL_GAP_PX - panel.width;
-    if (leftLeft >= VIEWPORT_MARGIN_PX) return { left: leftLeft, top: centeredTop, side: 'left' };
-  }
+  if (rightFits) return { left: rightLeft, top: sideTop, side: 'right' };
+  if (leftFits) return { left: leftLeft, top: sideTop, side: 'left' };
 
   // 兜底：四个方向都放不下（极小视口/桌面窗口），只能夹回视口内；此时可能盖住宠物。
   return {

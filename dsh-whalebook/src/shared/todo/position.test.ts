@@ -29,7 +29,7 @@ describe('placeTodoPanel —— 落点与避让', () => {
     const point = placeTodoPanel(anchor, PANEL, VIEWPORT);
     assert.equal(point.side, 'above');
     assert.equal(point.left, 350);
-    assert.equal(point.top, 188);
+    assert.equal(point.top, 197);
     assert.equal(overlaps(point, PANEL, anchor), false);
   });
 
@@ -37,7 +37,7 @@ describe('placeTodoPanel —— 落点与避让', () => {
     const anchor = { left: 400, top: 100, right: 600, bottom: 200 };
     const point = placeTodoPanel(anchor, PANEL, VIEWPORT);
     assert.equal(point.side, 'below');
-    assert.equal(point.top, 212);
+    assert.equal(point.top, 203);
     assert.equal(overlaps(point, PANEL, anchor), false);
   });
 
@@ -45,7 +45,7 @@ describe('placeTodoPanel —— 落点与避让', () => {
     const anchor = { left: 400, top: 300, right: 600, bottom: 500 };
     const point = placeTodoPanel(anchor, PANEL, VIEWPORT);
     assert.equal(point.side, 'right');
-    assert.equal(point.left, 612);
+    assert.equal(point.left, 603);
     assert.equal(point.top, 200);
     assert.equal(overlaps(point, PANEL, anchor), false);
   });
@@ -54,7 +54,7 @@ describe('placeTodoPanel —— 落点与避让', () => {
     const anchor = { left: 800, top: 300, right: 980, bottom: 500 };
     const point = placeTodoPanel(anchor, PANEL, VIEWPORT);
     assert.equal(point.side, 'left');
-    assert.equal(point.left, 488);
+    assert.equal(point.left, 497);
     assert.equal(overlaps(point, PANEL, anchor), false);
   });
 
@@ -63,6 +63,36 @@ describe('placeTodoPanel —— 落点与避让', () => {
     assert.equal(leftEdge.left, 8);
     const rightEdge = placeTodoPanel({ left: 950, top: 600, right: 990, bottom: 700 }, PANEL, VIEWPORT);
     assert.equal(rightEdge.left, VIEWPORT.width - PANEL.width - 8);
+  });
+
+  test('只走左右：靠左的宠物放右侧，不走上/下', () => {
+    const anchor = { left: 100, top: 300, right: 300, bottom: 450 };
+    const point = placeTodoPanel(anchor, PANEL, VIEWPORT, { horizontalOnly: true });
+    assert.equal(point.side, 'right');
+    assert.equal(point.left, 303);
+  });
+
+  test('只走左右：靠右的宠物放左侧', () => {
+    const anchor = { left: 700, top: 300, right: 900, bottom: 450 };
+    const point = placeTodoPanel(anchor, PANEL, VIEWPORT, { horizontalOnly: true });
+    assert.equal(point.side, 'left');
+    assert.equal(point.left, 397);
+  });
+
+  test('只走左右：首选侧放不下时换另一侧', () => {
+    const anchor = { left: 950, top: 300, right: 990, bottom: 450 };
+    const point = placeTodoPanel(anchor, PANEL, VIEWPORT, { horizontalOnly: true });
+    assert.equal(point.side, 'left');
+  });
+
+  test('只走左右：两侧都放不下时才兜底 overlap', () => {
+    const point = placeTodoPanel(
+      { left: 120, top: 100, right: 200, bottom: 160 },
+      PANEL,
+      { width: 320, height: 240 },
+      { horizontalOnly: true },
+    );
+    assert.equal(point.side, 'overlap');
   });
 
   test('极小视口：四个方向都放不下时才兜底（标记 overlap）', () => {

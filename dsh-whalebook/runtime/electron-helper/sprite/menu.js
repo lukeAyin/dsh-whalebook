@@ -231,6 +231,56 @@ Object.assign(PetSprite.prototype, {
     this.setInteractive(true);
   },
 
+  /**
+   * 打开待办面板前把窗口左右对称加宽。
+   *
+   * 桌面宠物窗口原本只有「宠物 + 四周余量」，左右侧各约 0.5×size 宽，放不下 308px 的面板；
+   * 不改窗口就只能兜底盖住宠物。这里按面板宽度补足两侧余量并对称加宽：窗口向左移动、宽度变大，
+   * 宠物的屏幕位置不变（sendBounds 用 margin 补偿）。关闭时 collapseTodoMargin 还原。
+   */
+  expandTodoMargin() {
+    if (this.todoExpanded) return;
+    // 面板宽 308 + 间距 3 + 视口留白 8 + 余量 2；改 styles.ts 的面板宽度时这里要同步。
+    const need = 308 + 3 + 8 + 2;
+    this.margin = { ...this.baseMargin };
+    // 锚点用舞台（视觉包围盒），不是点击命中区：命中区比身体窄，按它避让仍会压住尾巴/头发。
+    const anchor = this.todoAnchorRect();
+    const leftSpace = anchor.left;
+    const rightSpace = window.innerWidth - anchor.right;
+    const pad = Math.max(0, need - Math.min(leftSpace, rightSpace));
+    if (pad <= 0) return;
+    this.margin.l += pad;
+    this.margin.r += pad;
+    this.el.style.left = this.margin.l + 'px';
+    this.todoExpanded = true;
+    window.__dshWhalebookDebug.winMargin = this.margin;
+    this.sendBounds(this.pos.x, this.pos.y);
+  },
+
+  /** 待办面板的锚点：舞台向身体命中区收 80%，避开透明边，别让面板离宠物太远。 */
+  todoAnchorRect() {
+    const stage = (this.stage || this.hit).getBoundingClientRect();
+    const hit = this.hit.getBoundingClientRect();
+    const insetX = (hit.left - stage.left) * 0.8;
+    const insetXr = (stage.right - hit.right) * 0.8;
+    return {
+      left: stage.left + insetX,
+      top: stage.top,
+      right: stage.right - insetXr,
+      bottom: stage.bottom,
+    };
+  },
+
+  /** 待办面板关闭后还原窗口余量；没有外扩过则不动。 */
+  collapseTodoMargin() {
+    if (!this.todoExpanded) return;
+    this.margin = { ...this.baseMargin };
+    this.el.style.left = this.margin.l + 'px';
+    this.todoExpanded = false;
+    window.__dshWhalebookDebug.winMargin = this.margin;
+    this.sendBounds(this.pos.x, this.pos.y);
+  },
+
   // 待办面板开关（与浏览器半侧共用 shared/todo/panel）：贴在身体命中区旁、跟着宠物移动；
   // 面板是窗口内 DOM，期间整窗保持可交互，关闭后交还命中区穿透。
   toggleTodo() {
@@ -239,24 +289,33 @@ Object.assign(PetSprite.prototype, {
       this.todoClose = null;
       return;
     }
+    // 先加宽窗口再挂载：面板挂载后会按新视口自动选边，不会盖住宠物。
+    this.expandTodoMargin();
     const mount = S.mountTodoPanel({
-      anchor: () => {
-        const r = this.hit.getBoundingClientRect();
-        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
-      },
+      anchor: () => this.todoAnchorRect(),
       anchorEl: this.hit,
+      // 桌面端固定左右摆：靠左显示右、靠右显示左，避免上下翻转压住宠物。
+      horizontalOnly: true,
+      // 桌面窗口可能有一部分在屏幕外：定位按宠物所在屏的可见区夹取，靠边时自动换到内侧。
+      viewport: () => {
+        const clamp = this.visibleClampRect();
+        if (!clamp) return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+        return { left: clamp.x, top: clamp.y, width: clamp.w, height: clamp.h };
+      },
       // 桌面窗口是 file://，接口必须给绝对地址
       baseUrl: BASE + '/todos',
       onClose: () => {
         this.todoClose = null;
         this.todoOpen = false;
         window.__dshWhalebookDebug.todoOpen = false;
+        this.collapseTodoMargin();
         this.syncInputBusy();
         if (!this.menuOpen && !this.chatOpen) this.setInteractive(false);
       },
     });
     this.todoClose = mount.close;
     this.todoOpen = true;
+    if (window.petBridge && window.petBridge.focusWindow) window.petBridge.focusWindow();
     window.__dshWhalebookDebug.todoOpen = true;
     this.syncInputBusy();
     this.setInteractive(true);

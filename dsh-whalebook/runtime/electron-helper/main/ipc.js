@@ -124,6 +124,12 @@ function registerIpc({ ipcMain, petWindows, shell, openTarget, petRoute }) {
     petWindows.state.inputBusy.set(win.id, !!busy);
   });
 
+  // 待办面板打开时主动聚焦，点其它应用/窗口才会触发 blur，面板随之收起。
+  ipcMain.on('pet:focus-window', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && !win.isDestroyed()) win.focus();
+  });
+
   ipcMain.on('pet:input-regions', (event, input) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win || win.isDestroyed() || !input || !Array.isArray(input.rects)) return;

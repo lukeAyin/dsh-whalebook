@@ -149,9 +149,10 @@ export function createCardEntry(rt: CardEntryRuntime) {
       });
     };
 
-    /** 宠物命中区的当前矩形：面板贴着它摆，宠物走位时由面板自己巡检跟随。 */
+    /** 宠物视觉舞台的当前矩形：面板贴着它摆，宠物走位时由面板自己巡检跟随。
+     * 不用命中区（比身体窄），否则面板会压住尾巴/头发。 */
     const anchorRect = () => {
-      const rect = stage()?.querySelector('.dsh-whalebook-hit')?.getBoundingClientRect();
+      const rect = stage()?.getBoundingClientRect();
       return rect ? { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom } : null;
     };
 

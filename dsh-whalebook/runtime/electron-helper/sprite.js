@@ -71,6 +71,9 @@ class PetSprite {
     const fontConf = pet.font || config.font || S.DEFAULT_FONT;
     this.margin = { t: Math.max(m, S.bubbleTopMarginPx(fontConf, this.size)), r: m, b: m, l: m };
     window.__dshWhalebookDebug.winMargin = this.margin;
+    // 待办面板打开时窗口要左右对称外扩，关闭后按这份基准余量缩回（见 sprite/menu.js）。
+    this.baseMargin = { ...this.margin };
+    this.todoExpanded = false;
     // 宠物包围盒左上角在【工作区】坐标系里的位置（本窗口的位置 = 宠物的位置）
     this.pos = { x: 0, y: 0 };
 
