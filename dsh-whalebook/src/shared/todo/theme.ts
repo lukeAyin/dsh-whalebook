@@ -76,6 +76,49 @@ const FALLBACK: Record<TodoTheme, TodoPalette> = {
   },
 };
 
+/** 解析 CSS 颜色为 [r, g, b, a]；只接受 #rgb/#rrggbb/#rrggbbaa 与 rgb()/rgba()，解析不了返回 null。 */
+function parseColor(color: string): [number, number, number, number] | null {
+  const value = color.trim();
+  if (value.toLowerCase() === 'transparent') return [0, 0, 0, 0];
+  const hex = value.match(/^#([0-9a-f]{3,8})$/i);
+  if (hex !== null) {
+    const digits = hex[1];
+    const expand = (part: string): number => parseInt(part.length === 1 ? part + part : part, 16);
+    if (digits.length === 3) return [expand(digits[0]), expand(digits[1]), expand(digits[2]), 1];
+    if (digits.length === 6)
+      return [expand(digits.slice(0, 2)), expand(digits.slice(2, 4)), expand(digits.slice(4, 6)), 1];
+    if (digits.length === 8) {
+      return [
+        expand(digits.slice(0, 2)),
+        expand(digits.slice(2, 4)),
+        expand(digits.slice(4, 6)),
+        expand(digits.slice(6, 8)) / 255,
+      ];
+    }
+    return null;
+  }
+  const rgb = value.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+%?))?\s*\)$/i);
+  if (rgb === null) return null;
+  const alpha =
+    rgb[4] === undefined ? 1 : rgb[4].endsWith('%') ? Number.parseFloat(rgb[4]) / 100 : Number.parseFloat(rgb[4]);
+  return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3]), alpha];
+}
+
+/**
+ * 把带透明度的颜色叠到实底上，得到不透明颜色。
+ * 用于 `bg-overlay` 这类半透明 token：面板需要跟随主题，但不能透出桌面/聊天背景。
+ */
+export function compositeOpaque(color: string, base: string): string {
+  const fg = parseColor(color);
+  if (fg === null) return color;
+  if (fg[3] >= 1) return `rgb(${fg[0]}, ${fg[1]}, ${fg[2]})`;
+  const solid = parseColor(base);
+  if (solid === null) return color;
+  const alpha = fg[3];
+  const mix = (front: number, back: number): number => Math.round(front * alpha + back * (1 - alpha));
+  return `rgb(${mix(fg[0], solid[0])}, ${mix(fg[1], solid[1])}, ${mix(fg[2], solid[2])})`;
+}
+
 /** 把 DSH token 解析成具体颜色；token 缺失或透明时用兜底值。 */
 function colorOf(token: string, fallback: string): string {
   if (typeof document === 'undefined') return fallback;
@@ -93,9 +136,11 @@ function colorOf(token: string, fallback: string): string {
 /** 读取一套主题色：优先 DSH token，缺什么补什么。 */
 export function readTodoPalette(theme: TodoTheme): TodoPalette {
   const fallback = FALLBACK[theme];
+  // 面板必须不透明：先把主题色叠到 DSH 的实底 bg-base 上，再使用。
+  const base = compositeOpaque(colorOf('--dsw-alias-bg-base', fallback.bg), fallback.bg);
   return {
-    bg: colorOf('--dsw-alias-bg-overlay', colorOf('--dsw-alias-bg-layer-1', fallback.bg)),
-    surface: colorOf('--dsw-alias-bg-layer-2', colorOf('--dsw-alias-bg-layer-1', fallback.surface)),
+    bg: compositeOpaque(colorOf('--dsw-alias-bg-layer-1', colorOf('--dsw-alias-bg-overlay', fallback.bg)), base),
+    surface: compositeOpaque(colorOf('--dsw-alias-bg-layer-2', fallback.surface), base),
     label: colorOf('--dsw-alias-label-primary', fallback.label),
     muted: colorOf('--dsw-alias-label-secondary', fallback.muted),
     faint: colorOf('--dsw-alias-label-tertiary', fallback.faint),

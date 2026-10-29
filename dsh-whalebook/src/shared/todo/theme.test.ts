@@ -6,7 +6,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { resolveTodoTheme } from './theme.ts';
+import { compositeOpaque, resolveTodoTheme } from './theme.ts';
 
 describe('resolveTodoTheme —— 亮/暗色判定', () => {
   test('DSH 暗色标记优先', () => {
@@ -17,5 +17,23 @@ describe('resolveTodoTheme —— 亮/暗色判定', () => {
   test('没有 DSH 标记时跟随系统', () => {
     assert.equal(resolveTodoTheme(false, true), 'dark');
     assert.equal(resolveTodoTheme(false, false), 'light');
+  });
+});
+
+describe('compositeOpaque —— 半透明 token 叠实底', () => {
+  test('不透明颜色原样输出', () => {
+    assert.equal(compositeOpaque('rgb(10, 20, 30)', 'rgb(255, 255, 255)'), 'rgb(10, 20, 30)');
+  });
+
+  test('半透明叠到实底上会混色', () => {
+    assert.equal(compositeOpaque('rgba(255, 0, 0, 0.5)', 'rgb(0, 0, 255)'), 'rgb(128, 0, 128)');
+  });
+
+  test('透明色落在实底上', () => {
+    assert.equal(compositeOpaque('transparent', 'rgb(20, 30, 40)'), 'rgb(20, 30, 40)');
+  });
+
+  test('hex 兜底也能解析', () => {
+    assert.equal(compositeOpaque('rgba(255, 255, 255, 0.5)', '#000000'), 'rgb(128, 128, 128)');
   });
 });
