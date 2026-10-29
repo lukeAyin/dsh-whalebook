@@ -20,6 +20,7 @@ import {
   type TodoListHandlers,
 } from './render.ts';
 import { injectTodoCss } from './styles.ts';
+import { applyTodoTheme } from './theme.ts';
 import type { TodoItem } from './types.ts';
 
 /** 挂载参数。 */
@@ -69,6 +70,7 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
   let editing: TodoEditing | null = null;
   let followTimer: number | null = null;
   let idleTimer: number | null = null;
+  let disposeTheme: (() => void) | null = null;
   let mount: TodoPanelMount | null = null;
 
   /** 取消自动收起计时。 */
@@ -106,6 +108,8 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
     if (closed) return;
     closed = true;
     clearIdle();
+    disposeTheme?.();
+    disposeTheme = null;
     if (followTimer !== null) window.clearInterval(followTimer);
     followTimer = null;
     window.removeEventListener('resize', place);
@@ -281,6 +285,8 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
 
   // 先入文档再量尺寸：不在文档里时 offsetWidth 恒为 0，面板会贴到左上角。
   document.body.appendChild(parts.root);
+  // 主题要等根节点进文档后才能解析 token 与写内联样式；监听 body 的暗色标记切换。
+  disposeTheme = applyTodoTheme(parts.root);
   mount = { el: parts.root, close };
   active = mount;
   place();
