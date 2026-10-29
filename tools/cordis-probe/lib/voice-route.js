@@ -2,11 +2,11 @@
  * 语音开关路由：`GET` 读当前状态、`POST` 翻转。
  *
  * 存在的理由：注册语音的代码在宿主（Node），而按钮在页面——两半没有直接通道，
- * 所以由宿主开一个最小路由让页面点。只服务本示例，不进 dsh-pet 的接口面。
+ * 所以由宿主开一个最小路由让页面点。只服务本示例，不进 dsh-whalebook 的接口面。
  * @module dsh-cordis-probe/voice-route
  */
 
-/** 路由前缀（与 dsh-pet 的 `/dsh-pet-7340` 并列，互不干扰）。 */
+/** 路由前缀（与 dsh-whalebook 的 `/dsh-whalebook-7340` 并列，互不干扰）。 */
 export const VOICE_ROUTE = '/cordis-probe-voice';
 
 /**

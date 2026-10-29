@@ -10,8 +10,8 @@
 #   ① push tag v*        —— 推 v0.3.9 / 或在网页发布带新 tag 的 Release 时触发
 #   ② workflow_dispatch  —— 手动输入 tag，重跑构建并重挂资产（检出该 tag 的代码）
 #
-# 产物：dsh-pet-win-x64.zip（固定名，内含 dsh-pet-<版本>-win-x64/ 目录）
-#   固定名是为了让 releases/latest/download/dsh-pet-win-x64.zip 这条永久链接成立。
+# 产物：dsh-whalebook-win-x64.zip（固定名，内含 dsh-whalebook-<版本>-win-x64/ 目录）
+#   固定名是为了让 releases/latest/download/dsh-whalebook-win-x64.zip 这条永久链接成立。
 #
 # 前置：该 tag 的 Release 必须已经存在，否则第「确认 Release」步会失败并给出提示。
 # 权限：只需要内置 GITHUB_TOKEN 的 contents: write，不需要配置任何 secret。
@@ -46,8 +46,8 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        # 包在 dsh-pet/ 子目录：所有 run 步骤默认在那里执行
-        working-directory: dsh-pet
+        # 包在 dsh-whalebook/ 子目录：所有 run 步骤默认在那里执行
+        working-directory: dsh-whalebook
 
     steps:
       - name: 检出目标 tag 的代码
@@ -89,8 +89,8 @@ jobs:
       - name: 构建 lib（四个入口）
         run: pnpm run bundle
 
-      # shared-core.js（window.PetShared）是 src/shared 的 iife 产物，被 .gitignore 排除、不入库。
-      # 少了它，桌面 helper 的 constants.js 顶层拿不到 window.PetShared，渲染端直接崩、桌宠不显示。
+      # shared-core.js（window.WhalebookShared）是 src/shared 的 iife 产物，被 .gitignore 排除、不入库。
+      # 少了它，桌面 helper 的 constants.js 顶层拿不到 window.WhalebookShared，渲染端直接崩、桌宠不显示。
       # 发布链的 prepare.js 会构建它，但本流水线只跑 bundle，所以必须显式补这一步。
       - name: 构建桌面共享核心（shared-core）
         run: pnpm run build:desktop-core
@@ -100,14 +100,14 @@ jobs:
 
       - name: 打包解包目录（CI 无本机 Electron，允许下载）
         env:
-          DSH_PET_ALLOW_ELECTRON_DOWNLOAD: "1"
+          DSH_WHALEBOOK_ALLOW_ELECTRON_DOWNLOAD: "1"
         run: npm run dist
 
       - name: 压缩为固定名 zip
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          $inner = "dsh-pet-$version-win-x64"
-          $zip = Join-Path $env:GITHUB_WORKSPACE 'dsh-pet-win-x64.zip'
+          $inner = "dsh-whalebook-$version-win-x64"
+          $zip = Join-Path $env:GITHUB_WORKSPACE 'dsh-whalebook-win-x64.zip'
 
           New-Item -ItemType Directory -Path "stage/$inner" -Force | Out-Null
           Copy-Item -Path "dist-app/win-unpacked/*" -Destination "stage/$inner" -Recurse
@@ -128,8 +128,8 @@ jobs:
       - name: 上传构建产物（发布失败也能下载排查）
         uses: actions/upload-artifact@v4
         with:
-          name: dsh-pet-win-x64
-          path: dsh-pet-win-x64.zip
+          name: dsh-whalebook-win-x64
+          path: dsh-whalebook-win-x64.zip
           retention-days: 7
           if-no-files-found: error
 
@@ -152,9 +152,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # zip 打在仓库根（GITHUB_WORKSPACE），而本 job 的 run 步骤默认 cwd 是 dsh-pet/：
+          # zip 打在仓库根（GITHUB_WORKSPACE），而本 job 的 run 步骤默认 cwd 是 dsh-whalebook/：
           # 必须用绝对路径，否则 gh 会报 no matches found（实测踩过）。
-          $zip = Join-Path $env:GITHUB_WORKSPACE 'dsh-pet-win-x64.zip'
+          $zip = Join-Path $env:GITHUB_WORKSPACE 'dsh-whalebook-win-x64.zip'
           if (-not (Test-Path $zip)) { Write-Error "找不到待上传的 zip：$zip"; exit 1 }
           "上传 {0}（{1:N1} MB）→ release {2}" -f $zip, ((Get-Item $zip).Length / 1MB), $env:TAG
           gh release upload $env:TAG $zip --clobber

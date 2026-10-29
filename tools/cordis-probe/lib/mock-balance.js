@@ -16,7 +16,7 @@ const inHours = (hours) => new Date(Date.now() + hours * 3_600_000).toISOString(
 
 // ---- 画布局用的小工具（自定义气泡的节点树是纯数据，几个原语就够拼出任意排版） ----
 
-/** 主文字色 / 次要文字色 / 底槽色（与 dsh-pet 气泡主题同一套取值）。 */
+/** 主文字色 / 次要文字色 / 底槽色（与 dsh-whalebook 气泡主题同一套取值）。 */
 const INK = '#1f1f1f';
 const MUTED = 'rgba(43,43,43,.6)';
 const TRACK = 'rgba(43,43,43,.12)';

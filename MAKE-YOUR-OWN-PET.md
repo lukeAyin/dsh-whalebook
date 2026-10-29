@@ -48,18 +48,18 @@ python encode_thumbs.py      # 转码 640×360 播放变体 → step04/
 插件默认只发布 `.webm`（VP9-alpha），Safari/WKWebView 不认 webm alpha（黑底），macOS 需要在 GitHub Release 下载官方转码的 **HEVC-with-Alpha `.mov`** 素材使用，两步：
 
 1. **下载**：<https://github.com/PC2005-cloud/dsh-pet/releases/tag/assets-mov>（固定 tag，保持最新；zip 解压后文件名与 webm 一一对应）
-2. **放入**：`.mov` 文件放进 `$DSH_HOME/dsh-pet/main-animation/mov/`（pet pack 宠物则是 `pet/<种类名>-animation/mov/`）
+2. **放入**：`.mov` 文件放进 `$DSH_HOME/dsh-whalebook/main-animation/mov/`（pet pack 宠物则是 `pet/<种类名>-animation/mov/`）
 
 ## ③ 动画 → 插件
 
 ```sh
 # 把 step04 的播放变体同步进插件包（webm 直接 cp）
-cp step04/*.webm dsh-pet/assets/webm/   # 播放格式（VP9-alpha）
+cp step04/*.webm dsh-whalebook/assets/webm/   # 播放格式（VP9-alpha）
 
 # 本地安装插件（--profile 填实际在用的那个：dsh web → web；
 # 桌面应用（Electron 版）改用应用内「插件管理」，见「快速开始（安装插件）」；
-# file: 指向插件目录 dsh-pet/dsh-pet）
-dsh plugin --profile web add file:D:/path/to/dsh-pet/dsh-pet
+# file: 指向插件目录 dsh-whalebook/dsh-whalebook）
+dsh plugin --profile web add file:D:/path/to/dsh-whalebook/dsh-whalebook
 ```
 
 > 中间产物（step01-04）由脚本生成、不入仓库；`video/` 源视频和脚本是成果、入库维护。
@@ -69,7 +69,7 @@ dsh plugin --profile web add file:D:/path/to/dsh-pet/dsh-pet
 插件只发布一个 npm 包、一个素材格式（webm）；`files` 收敛为固定清单（lib / src / assets/webm / runtime/electron-helper / assets/fonts / assets/pic / assets/config.jsonc / scripts/ensure-electron.mjs / cordis.patch.yml，见 `prepare.js`；浏览器与桌面模式共用，包体最小）：
 
 ```sh
-cd dsh-pet
+cd dsh-whalebook
 npm publish --tag latest   # prepack 自动执行构建（完整产物 + 收敛 files），无需手动构建
 ```
 

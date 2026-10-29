@@ -1,11 +1,11 @@
 openapi: 3.1.0
 
 info:
-  title: dsh-pet HTTP API
-  version: 0.3.8
-  summary: DSH 桌宠插件的宿主 HTTP 接口
+  title: 鲸事本 HTTP API
+  version: 0.1.0
+  summary: 鲸事本（dsh-whalebook）桌宠插件的宿主 HTTP 接口
   description: |
-    dsh-pet 的宿主（host）半侧通过 DSH 的 `webServer` 服务注册**一条前缀路由** `/dsh-pet-7340`，
+    dsh-whalebook 的宿主（host）半侧通过 DSH 的 `webServer` 服务注册**一条前缀路由** `/dsh-whalebook-7340`，
     浏览器半侧、桌面 Electron 半侧、以及设置页全都消费同一份实现（`handlePetRoute`）。
     本文件是该路由的公开契约：任何第三方插件 / 脚本都可以按此访问桌宠能力。
 
@@ -18,13 +18,13 @@ info:
       插件本身不固定监听端口，只往宿主的 Web 服务上挂路由。
     - 只监听 **127.0.0.1**，不对外网暴露，也**没有任何鉴权**：任何能访问本机该端口的进程都能调用。
       请勿把该端口转发/代理到公网。
-    - 桌面半侧不走 HTTP，而是 `dsh-pet-bridge://` 自定义 scheme 经主进程管道转发到**同一个**
+    - 桌面半侧不走 HTTP，而是 `dsh-whalebook-bridge://` 自定义 scheme 经主进程管道转发到**同一个**
       `handlePetRoute`。所以下表所有路径对两端行为完全一致。
 
     ## 两分钟上手
 
     ```bash
-    BASE=http://127.0.0.1:3080/dsh-pet-7340
+    BASE=http://127.0.0.1:3080/dsh-whalebook-7340
 
     # 1. 拉一次统一状态（只读、零副作用，可以随便轮询）
     curl -s $BASE/state
@@ -73,13 +73,13 @@ info:
 
 externalDocs:
   description: 项目仓库与使用说明
-  url: https://github.com/PC2005-cloud/dsh-pet
+  url: https://github.com/lukeAyin/dsh-whalebook
 
 servers:
   - url: http://127.0.0.1:{port}
     description: |
       本机 DSH Web 服务。`{port}` = `ctx.webServer.port`（`dsh web` 默认 3080）。
-      路由前缀固定为 `/dsh-pet-7340`（7340 是历史遗留的名字，**不是端口号**）。
+      路由前缀固定为 `/dsh-whalebook-7340`（7340 是历史遗留的名字，**不是端口号**）。
     variables:
       port:
         default: "3080"
@@ -98,7 +98,7 @@ tags:
     description: 语音合成——参数校验、排队与缓存都在宿主，成功时直接返回 mp3 文件
 
 paths:
-  /dsh-pet-7340/state:
+  /dsh-whalebook-7340/state:
     get:
       tags: [State]
       operationId: getState
@@ -220,7 +220,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/work-status:
+  /dsh-whalebook-7340/work-status:
     post:
       tags: [Action]
       operationId: setWorkStatus
@@ -291,7 +291,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/balance:
+  /dsh-whalebook-7340/balance:
     post:
       tags: [Action]
       operationId: refreshBalance
@@ -317,7 +317,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/whisper:
+  /dsh-whalebook-7340/whisper:
     post:
       tags: [Action]
       operationId: whisper
@@ -360,7 +360,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/broadcast:
+  /dsh-whalebook-7340/broadcast:
     post:
       tags: [Action]
       operationId: broadcast
@@ -495,7 +495,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/bubble/clear:
+  /dsh-whalebook-7340/bubble/clear:
     post:
       tags: [Action]
       operationId: clearBubble
@@ -540,7 +540,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/anim:
+  /dsh-whalebook-7340/anim:
     post:
       tags: [Action]
       operationId: playAnimation
@@ -552,7 +552,7 @@ paths:
           菜单动作处理函数（浏览器 `handleMenuAction` / 桌面 `sprite.onMenuAction`），所以镜像修正
           （文字类朝右时先强制朝左）、移动类走真实位移、其余播一遍这些语义天然一致。
           名字写进 `pets.<id>.anim`，消费端在 1 秒内轮询发现 `counter` 变化后换源播放。
-          **动画名即素材文件名**（`/dsh-pet-7340/thumb/<素材根>/<名字>.webm`），所以名字必须是
+          **动画名即素材文件名**（`/dsh-whalebook-7340/thumb/<素材根>/<名字>.webm`），所以名字必须是
           该宠物 `animations` 配置里菜单能点到的名字之一——播放端对不存在的名字没有兜底
           （404 → 加载失败 → 表现为"点了没反应"），因此由宿主在写入前拦下。
         - **`url`（第三方自带的素材地址）**：完整 URL，**不查动画池**——素材在调用方手里，
@@ -694,7 +694,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/position:
+  /dsh-whalebook-7340/position:
     post:
       tags: [Action]
       operationId: setPetPosition
@@ -830,7 +830,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/throw:
+  /dsh-whalebook-7340/throw:
     post:
       tags: [Action]
       operationId: throwPet
@@ -918,7 +918,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/lock:
+  /dsh-whalebook-7340/lock:
     post:
       tags: [Action]
       operationId: acquireLock
@@ -1036,7 +1036,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/lock/release:
+  /dsh-whalebook-7340/lock/release:
     post:
       tags: [Action]
       operationId: releaseLock
@@ -1109,7 +1109,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/pose:
+  /dsh-whalebook-7340/pose:
     get:
       tags: [Action]
       operationId: getPetPose
@@ -1119,11 +1119,11 @@ paths:
 
         **只有桌面端有这条路。** 网页端的宠物位置**天生每个页面一份**（开两个标签页时两边本来就
         不同），塞进宿主一份快照语义上就是错的（后写者覆盖先写者）——所以网页端走**页面内**的
-        Cordis 只读服务 `petApi7340`：
+        Cordis 只读服务 `whalebookApi7340`：
 
         ```js
         // 同页的第三方客户端插件；拿不到 = 老版本，不抛
-        const svc = ctx.get('petApi7340');
+        const svc = ctx.get('whalebookApi7340');
         const pose = svc ? svc.pose('main') : null; // → { x, y, facing } | null
         ```
 
@@ -1182,14 +1182,14 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/pose/report:
+  /dsh-whalebook-7340/pose/report:
     post:
       tags: [Action]
       operationId: reportPetPose
       summary: 桌面渲染端上报实况（内部通道，第三方不用调）
       description: |
         **渲染端 → 宿主**的内部通道：桌面宠物在**变化时**上报自己的实况（拖拽结束 / 走位结束 /
-        抛掷落定 / `/position` 指令完成 / turn 转身）。桌面管道（`dsh-pet-bridge://`）与 HTTP 走
+        抛掷落定 / `/position` 指令完成 / turn 转身）。桌面管道（`dsh-whalebook-bridge://`）与 HTTP 走
         同一份实现。
 
         宿主只存一份**内存快照**，**不写 `/state`**——那是"给渲染端读"的单向通道，写进去只会惊动
@@ -1247,7 +1247,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/playback/{id}:
+  /dsh-whalebook-7340/playback/{id}:
     get:
       tags: [Action]
       operationId: getPlayback
@@ -1319,7 +1319,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/playback/{id}/report:
+  /dsh-whalebook-7340/playback/{id}/report:
     post:
       tags: [Action]
       operationId: reportPlayback
@@ -1403,7 +1403,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/attachment:
+  /dsh-whalebook-7340/attachment:
     get:
       tags: [Assets]
       operationId: getAttachmentImage
@@ -1450,7 +1450,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/chat:
+  /dsh-whalebook-7340/chat:
     get:
       tags: [Action]
       operationId: getChatMemory
@@ -1631,7 +1631,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/chat/memory:
+  /dsh-whalebook-7340/chat/memory:
     get:
       tags: [Action]
       operationId: listOrphanChatMemory
@@ -1704,14 +1704,14 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/config:
+  /dsh-whalebook-7340/config:
     get:
       tags: [Config]
       operationId: getConfig
       summary: 读取合并后的成品配置
       description: |
         返回**合并成品**：内置默认（`assets/config.jsonc`）与用户层
-        （`$DSH_HOME/dsh-pet/main-config.jsonc`）深度合并后的结果，
+        （`$DSH_HOME/dsh-whalebook/main-config.jsonc`）深度合并后的结果，
         每个条目的字段都已填满（动画池、权重、物理参数、工作状态文案等），
         浏览器/桌面/设置页直接消费，**无需任何校验或兜底**。
 
@@ -1846,7 +1846,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/pet-display:
+  /dsh-whalebook-7340/pet-display:
     post:
       tags: [Config]
       operationId: setPetDisplay
@@ -1859,7 +1859,7 @@ paths:
 
         **层归属由宿主反查，调用方不要传**：`id` 在合并后是**全局唯一**的（`mergePet` 会跳过
         重复实例），宿主用 `findPetInstance` 定位后按条目归属决定写哪个文件——`main` 条目写
-        `$DSH_HOME/dsh-pet/main-config.jsonc`，文件宠物写 `pet/<前缀>-config.json`（`.jsonc` 同样支持）。
+        `$DSH_HOME/dsh-whalebook/main-config.jsonc`，文件宠物写 `pet/<前缀>-config.json`（`.jsonc` 同样支持）。
 
         写入语义与 `PUT /config` 一致：白名单重建 + 磁盘原值透传（不抹掉手写的精调字段）。
         写盘后同样**异步**重启桌面 Helper、不阻塞响应——响应可能来不及送达（发起者往往就是
@@ -1915,7 +1915,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/pet-config:
+  /dsh-whalebook-7340/pet-config:
     post:
       tags: [Config]
       operationId: savePetLayer
@@ -2004,7 +2004,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/config/meta:
+  /dsh-whalebook-7340/config/meta:
     get:
       tags: [Config]
       operationId: getConfigMeta
@@ -2033,7 +2033,7 @@ paths:
                   logs:
                     type: string
                     description: |
-                      统一日志文件绝对路径（`$DSH_HOME/dsh-pet/logs.txt`）。
+                      统一日志文件绝对路径（`$DSH_HOME/dsh-whalebook/logs.txt`）。
                       桌面版 DSH 没有控制台，插件的运行日志全部落在这一个文件上，
                       单文件上限 1 MB，写满后只保留最新的 512 KB。
                   storage:
@@ -2045,9 +2045,9 @@ paths:
                     type: string
                     description: |
                       DSH profile 名，用于拼接卸载命令
-                      `dsh plugin --profile <名> remove dsh-pet`。反推不出时为空串。
+                      `dsh plugin --profile <名> remove dsh-whalebook`。反推不出时为空串。
 
-  /dsh-pet-7340/models:
+  /dsh-whalebook-7340/models:
     get:
       tags: [Config]
       operationId: listModels
@@ -2083,7 +2083,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/reload:
+  /dsh-whalebook-7340/reload:
     post:
       tags: [Action]
       operationId: reload
@@ -2110,7 +2110,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/quit:
+  /dsh-whalebook-7340/quit:
     get:
       tags: [Action]
       operationId: probeQuit
@@ -2165,7 +2165,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  "/dsh-pet-7340/thumb/{petId}/{file}":
+  "/dsh-whalebook-7340/thumb/{petId}/{file}":
     get:
       tags: [Assets]
       operationId: getAnimation
@@ -2214,13 +2214,13 @@ paths:
               schema:
                 type: string
         "404":
-          description: "素材不存在（`dsh-pet: asset not found`）"
+          description: "素材不存在（`dsh-whalebook: asset not found`）"
           content:
             text/plain:
               schema:
                 type: string
 
-  /dsh-pet-7340/voice/speak:
+  /dsh-whalebook-7340/voice/speak:
     post:
       tags: [Voice]
       operationId: synthesizeVoice
@@ -2228,7 +2228,7 @@ paths:
       description: |
         把一段中文文本合成为 mp3，成功时直接返回文件本体。
 
-        - **合成源可被第三方覆盖**：宿主插件可经 Cordis 服务 `petApi7340.voice.register`
+        - **合成源可被第三方覆盖**：宿主插件可经 Cordis 服务 `whalebookApi7340.voice.register`
           注册自己的实现；注册后本端点改走该实现，未注册时走内置实现。两边返回的都是 mp3，
           调用方无需区分。
         - 覆盖期间 `voice` 参数不生效（音色由第三方实现自己决定），但校验口径不变：
@@ -2286,7 +2286,7 @@ paths:
         "405":
           description: 方法不是 POST。
 
-  /dsh-pet-7340/voice/voices:
+  /dsh-whalebook-7340/voice/voices:
     get:
       tags: [Voice]
       operationId: getVoices
@@ -2321,7 +2321,7 @@ paths:
         "405":
           description: 方法不是 GET。
 
-  /dsh-pet-7340/logo:
+  /dsh-whalebook-7340/logo:
     get:
       tags: [Assets]
       operationId: getLogo
@@ -2342,7 +2342,7 @@ paths:
         "404":
           description: 包内没有 logo（安装损坏，`text/plain`）。
 
-  "/dsh-pet-7340/sound/{file}":
+  "/dsh-whalebook-7340/sound/{file}":
     get:
       tags: [Assets]
       operationId: getSound
@@ -2359,13 +2359,13 @@ paths:
                 type: string
                 format: binary
         "404":
-          description: "音效不存在（`dsh-pet: sound not found`）"
+          description: "音效不存在（`dsh-whalebook: sound not found`）"
           content:
             text/plain:
               schema:
                 type: string
 
-  "/dsh-pet-7340/font/{file}":
+  "/dsh-whalebook-7340/font/{file}":
     get:
       tags: [Assets]
       operationId: getFont
@@ -2382,13 +2382,13 @@ paths:
                 type: string
                 format: binary
         "404":
-          description: "字体不存在（`dsh-pet: font not found`）"
+          description: "字体不存在（`dsh-whalebook: font not found`）"
           content:
             text/plain:
               schema:
                 type: string
 
-  "/dsh-pet-7340/pic/{file}":
+  "/dsh-whalebook-7340/pic/{file}":
     get:
       tags: [Assets]
       operationId: getPic
@@ -2396,16 +2396,16 @@ paths:
       description: |
         静态图，两种形式：
 
-        - `/dsh-pet-7340/pic/<名>.png` → **包内** `assets/pic/`（方形 png，系统通知图标用）。
-        - `/dsh-pet-7340/pic/memes/<素材根>/<名>.png` → 表情包（碎碎念/对话配图用的图），
+        - `/dsh-whalebook-7340/pic/<名>.png` → **包内** `assets/pic/`（方形 png，系统通知图标用）。
+        - `/dsh-whalebook-7340/pic/memes/<素材根>/<名>.png` → 表情包（碎碎念/对话配图用的图），
           按素材根决定**素材归属**，与动画（`/thumb`）同一套语义：
           1. `pet/<素材根>-memes/` 存在（种类自带表情包）：**只查该目录**，查不到即 `404` 显式报错，
              **绝不回落**别的目录；
-          2. 不存在：用户目录 `$DSH_HOME/dsh-pet/memes/` 优先，其次包内 `assets/memes/`（逐文件合并，
+          2. 不存在：用户目录 `$DSH_HOME/dsh-whalebook/memes/` 优先，其次包内 `assets/memes/`（逐文件合并，
              与 `main-animation/<ext> → 包内 assets/<ext>` 的主素材链同构）。
 
           素材根 = 该宠物的条目 key（`assetRoot`：主配置宠物为 `main`，文件宠物为配置文件前缀）。
-          旧的两段形式 `/dsh-pet-7340/pic/memes/<名>.png` 仍然可用，等价于素材根 `main` 的回落链
+          旧的两段形式 `/dsh-whalebook-7340/pic/memes/<名>.png` 仍然可用，等价于素材根 `main` 的回落链
           （未升级的客户端照常取到包内表情包）。
 
           `素材根` 是**标识符**（不是路径片段）：含分隔符 / 保留字符即 `400`，早于任何路径拼接判定。
@@ -2433,19 +2433,19 @@ paths:
                 type: string
                 format: binary
         "400":
-          description: "素材根含非法字符（`dsh-pet: invalid asset root`）"
+          description: "素材根含非法字符（`dsh-whalebook: invalid asset root`）"
           content:
             text/plain:
               schema:
                 type: string
         "404":
-          description: "图片不存在（`dsh-pet: pic not found`）"
+          description: "图片不存在（`dsh-whalebook: pic not found`）"
           content:
             text/plain:
               schema:
                 type: string
 
-  /dsh-pet-7340/menu/item:
+  /dsh-whalebook-7340/menu/item:
     post:
       tags: [Action]
       operationId: registerMenuItems
@@ -2559,7 +2559,7 @@ paths:
         "405":
           description: 方法不允许（只接受 POST / DELETE）
 
-  /dsh-pet-7340/menu/events:
+  /dsh-whalebook-7340/menu/events:
     get:
       tags: [State]
       operationId: pollMenuEvents
@@ -2616,7 +2616,7 @@ paths:
         "405":
           description: 方法不允许（只接受 GET）
 
-  /dsh-pet-7340/menu/click:
+  /dsh-whalebook-7340/menu/click:
     post:
       tags: [Action]
       operationId: reportMenuClick
@@ -2658,14 +2658,14 @@ paths:
         "405":
           description: 方法不允许（只接受 POST）
 
-  /dsh-pet-7340/todos:
+  /dsh-whalebook-7340/todos:
     get:
       tags: [Action]
       operationId: listTodos
       summary: 读取待办清单
       description: |
         返回全部待办，已按「未完成在前、到期越近越靠前、无期限垫底、已完成最后」排序。
-        数据落在插件的用户目录（`<DSH_HOME>/dsh-pet/todos.json`），浏览器端与桌面端共用同一份。
+        数据落在插件的用户目录（`<DSH_HOME>/dsh-whalebook/todos.json`），浏览器端与桌面端共用同一份。
 
         **提醒由宿主定时器驱动，不依赖页面是否打开**：距到期越近提醒越密——
         进入 7 天内开始提醒（24h → 12h → 4h → 1h → 20m → 5m 逐级变密），
@@ -2728,7 +2728,7 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
-  /dsh-pet-7340/todos/{id}:
+  /dsh-whalebook-7340/todos/{id}:
     patch:
       tags: [Action]
       operationId: updateTodo
@@ -3660,7 +3660,7 @@ components:
           description: |
             可选配图**名称**（不是 URL）：配置 `memes` 的键，也就是该图文件的文件名（不含扩展名）。
             仅在配置开启了 `whisperImageEnabled` / `chatImageEnabled` 且命中池内图片时出现。
-            消费端（浏览器 / 桌面）按素材根拼成 `/dsh-pet-7340/pic/memes/<素材根>/<名>.png`
+            消费端（浏览器 / 桌面）按素材根拼成 `/dsh-whalebook-7340/pic/memes/<素材根>/<名>.png`
             取图，素材根 = 该宠物的条目 key（`assetRoot`）。
             与 `url` 并列、**由字段名区分**；**只有 `POST /broadcast` 会写 url 形态**。
         url:

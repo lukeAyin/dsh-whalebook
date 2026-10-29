@@ -1,14 +1,14 @@
-# dsh-pet 对外 Cordis 服务
+# dsh-whalebook 对外 Cordis 服务
 
-同名服务 `petApi7340` 在两半各有一份，分属不同容器（宿主进程 / DSH web 页面），互不可见。
+同名服务 `whalebookApi7340` 在两半各有一份，分属不同容器（宿主进程 / DSH web 页面），互不可见。
 
 本文是**完整契约**（参数、返回字段、边界与示例）；只要成员的一句话预览，见 [`CORDIS-API.md`](CORDIS-API.md)。
 
 ```js
-ctx.get('petApi7340')
+ctx.get('whalebookApi7340')
 ```
 
-拿不到对应分组 = 你在另一半，或 dsh-pet 未启用 / 版本过旧。
+拿不到对应分组 = 你在另一半，或 dsh-whalebook 未启用 / 版本过旧。
 
 ## 客户端半侧（DSH web 页面内，只在该页面内有效）
 
@@ -33,7 +33,7 @@ ctx.get('petApi7340')
 `null`：这一页没有这只宠物。
 
 ```js
-ctx.get('petApi7340').pose('main');
+ctx.get('whalebookApi7340').pose('main');
 // { x: 0.8467, y: 0.2438, facing: 'left' }
 ```
 
@@ -59,7 +59,7 @@ ctx.get('petApi7340').pose('main');
 `null`：这一页没有这只宠物。
 
 ```js
-ctx.get('petApi7340').progress('main');
+ctx.get('whalebookApi7340').progress('main');
 // { playbackId: 'pb_1755...', anim: 'walk', currentTime: 3.42, duration: 10.09, paused: false, buffering: false }
 ```
 
@@ -85,7 +85,7 @@ ctx.get('petApi7340').progress('main');
 - 零请求：读的是内存，可以在渲染或 `requestAnimationFrame` 里按需读。
 
 ```js
-const s = ctx.get('petApi7340').getState();
+const s = ctx.get('whalebookApi7340').getState();
 if (s) {
   console.log('版本', s.counter, '这只宠物最近说：', s.pets.main?.say?.data);
 }
@@ -111,7 +111,7 @@ if (s) {
 **读取即消费**：读走后所有标记清回 `null`，下一次读到的是之后的新点击；连续点同一条只留最后一次。这个 owner 在本页没有可见项（没注册、已清除，或只注册给 `desktop`）时回 `unknown-owner`。
 
 ```js
-const res = ctx.get('petApi7340').menuEvents('my-plugin');
+const res = ctx.get('whalebookApi7340').menuEvents('my-plugin');
 if (res.ok) {
   for (const [label, petId] of Object.entries(res.events)) {
     if (petId !== null) console.log(label, '被点了，点在', petId);
@@ -148,11 +148,11 @@ if (res.ok) {
 | `custom` | 节点树：`{ views: CustomNode[], percent? }` 或 `{ rows: CustomNode, detailRows?: CustomNode, percent? }`，见下 |
 
 ```js
-export const inject = ['petApi7340'];
+export const inject = ['whalebookApi7340'];
 
 export function apply(ctx) {
   ctx.effect(() =>
-    ctx.get('petApi7340').balance.register({
+    ctx.get('whalebookApi7340').balance.register({
       id: 'my-gateway',
       async fetch({ provider }) {
         const res = await fetch('http://127.0.0.1:8080/v1/credits', { signal: AbortSignal.timeout(20_000) });
@@ -196,7 +196,7 @@ export function apply(ctx) {
 
 ```js
 ctx.effect(() =>
-  ctx.get('petApi7340').balance.register({
+  ctx.get('whalebookApi7340').balance.register({
     id: 'my-gateway',
     async fetch({ provider }) {
       return {
@@ -237,7 +237,7 @@ ctx.effect(() =>
 | `external` | string[] | 第三方已注册 id |
 
 ```js
-ctx.get('petApi7340').balance.list();
+ctx.get('whalebookApi7340').balance.list();
 // { builtin: ['opencode-go', 'commandcode', 'deepseek-official', 'deepseek-account'], external: ['my-gateway'] }
 ```
 
@@ -267,11 +267,11 @@ ctx.get('petApi7340').balance.list();
 - **不回落**：注册了就不会退到内置实现——第三方坏了就是没声音，不会静默改用 edge。
 
 ```js
-export const inject = ['petApi7340'];
+export const inject = ['whalebookApi7340'];
 
 export function apply(ctx) {
   ctx.effect(() =>
-    ctx.get('petApi7340').voice.register({
+    ctx.get('whalebookApi7340').voice.register({
       id: 'my-tts',
       name: '我的语音',
       async synthesize({ text, rate }) {
@@ -301,6 +301,6 @@ export function apply(ctx) {
 | `external` | string[] | 当前生效的第三方 id；没注册则为空数组 |
 
 ```js
-ctx.get('petApi7340').voice.list();
+ctx.get('whalebookApi7340').voice.list();
 // { builtin: ['edge'], external: ['my-tts'] }
 ```

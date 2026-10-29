@@ -1,5 +1,5 @@
 /**
- * dsh-pet HTTP 接口测试页的本地代理。
+ * dsh-whalebook HTTP 接口测试页的本地代理。
  *
  * 为什么需要它：宿主路由（src/host/index.ts）**不返回 CORS 头**——浏览器半侧之所以能用，
  * 是因为它由 DSH 自己的 Web 服务同源提供。测试页要么是 file://（Origin: null），
@@ -17,7 +17,7 @@
  * 另外它还扮演**第三方素材托管方**，让测试页能把"自己托管的 url"这条路走通：
  *   POST /__upload?name=<原文件名>   请求体 = 文件原始字节 → { ok, url, bytes }
  *   GET  /__uploads/<文件名>         把刚上传的文件原样送回去（带 CORS）
- * 上传落在系统临时目录（`<tmp>/dsh-pet-tester-uploads`），**不污染仓库**。
+ * 上传落在系统临时目录（`<tmp>/dsh-whalebook-tester-uploads`），**不污染仓库**。
  *
  * 注意 /__uploads 的响应**必须带 CORS**：测试页在 8741、DSH 页面在另一个端口，浏览器端素材
  * 走的是 `fetch`，跨源就会被拦。这正是"外站 url 要对方自己配 CORS"那条规则的真实演示——
@@ -46,7 +46,7 @@ const NO_OPEN = argv.includes('--no-open');
 let hostPort = Number(argOf('--port', '3080'));
 
 /** 路由前缀：与 src/host/index.ts 的 ROUTE_PREFIX 一致（7340 是名字，不是端口） */
-const PREFIX = '/dsh-pet-7340';
+const PREFIX = '/dsh-whalebook-7340';
 
 /** 这一跳要补的 CORS 头。注意：**只给本机测试代理补**，不改宿主行为。 */
 const CORS = {
@@ -60,7 +60,7 @@ const CORS = {
 const isApi = (url) => url === PREFIX || url.startsWith(PREFIX + '/') || url.startsWith(PREFIX + '?');
 
 /** 上传落盘目录：系统临时目录，**不污染仓库**（测试页在这里扮演"第三方托管素材"） */
-const UPLOAD_DIR = path.join(os.tmpdir(), 'dsh-pet-tester-uploads');
+const UPLOAD_DIR = path.join(os.tmpdir(), 'dsh-whalebook-tester-uploads');
 /** 单个上传上限：防手滑传个几 GB 把临时盘塞满 */
 const UPLOAD_MAX = 512 * 1024 * 1024;
 /** 上传/回读用的 MIME（`<video>` / `<img>` 靠它解码；认不出的按二进制流送） */
@@ -111,7 +111,7 @@ function forward(req, res) {
 }
 
 /**
- * 代理自己的小端点（**不是** dsh-pet 接口，所以放在前缀之外）：
+ * 代理自己的小端点（**不是** dsh-whalebook 接口，所以放在前缀之外）：
  *   GET  /__target        → { port }        页面启动时问"现在转发到哪个端口"
  *   POST /__target?port=N → { port }        页面改了端口输入框，切换转发目标
  * 这样测试页不用重新启动代理就能换端口试。
@@ -231,7 +231,7 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
   if (url.pathname === '/__target') return handleTarget(req, res, url);
-  // 代理自己扮演"第三方素材托管方"：上传 + 回读（都在前缀之外，不会被当成 dsh-pet 接口转发）
+  // 代理自己扮演"第三方素材托管方"：上传 + 回读（都在前缀之外，不会被当成 dsh-whalebook 接口转发）
   if (url.pathname === '/__upload') return handleUpload(req, res, url);
   if (url.pathname.startsWith('/__uploads/')) {
     return serveUpload(req, res, url.pathname.slice('/__uploads/'.length));
@@ -252,7 +252,7 @@ server.on('error', (err) => {
 server.listen(PROXY_PORT, '127.0.0.1', () => {
   const url = `http://127.0.0.1:${PROXY_PORT}/${PAGE}`;
   console.log('');
-  console.log('  dsh-pet 接口测试页');
+  console.log('  dsh-whalebook 接口测试页');
   console.log('  ─────────────────────────────────────────────');
   console.log(`  测试页   ${url}`);
   console.log(`  转发到   http://127.0.0.1:${hostPort}${PREFIX}`);

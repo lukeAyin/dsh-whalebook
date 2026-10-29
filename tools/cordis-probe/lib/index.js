@@ -4,7 +4,7 @@
  * 三件事，缺一不可：
  * - `ctx.llm.registerConfigurableProviders(...)` —— 让它们进入设置页的「模型」目录；
  * - `ctx.llm.registerAdapter(...)` —— 注册路由，选择器里才能选中并列出模型；
- * - `petApi7340.balance.register(...)` —— 选中后能查到余额、弹出对应气泡。
+ * - `whalebookApi7340.balance.register(...)` —— 选中后能查到余额、弹出对应气泡。
  *
  * 服务商里有两个是**自定义多页气泡**（`shape: 'custom'`）：一个把内置三种形态复刻成 4 页、
  * 一个自设计 3 页，用来验证"第三方自己决定气泡长什么样 + 点击循环切页"这条能力。
@@ -23,7 +23,7 @@ export const name = 'cordis-probe';
  * 依赖声明：Cordis 会等这些服务就绪后再执行 `apply`。
  * 缺少 `inject` 时 `apply` 会在服务提供之前跑，`ctx.get` 全部拿不到（已实测）。
  */
-export const inject = ['llm', 'petApi7340'];
+export const inject = ['llm', 'whalebookApi7340'];
 
 /** 模型选择器与设置页里显示的名字。 */
 const DISPLAY_NAMES = {
@@ -40,7 +40,7 @@ const SETTINGS_NS = 'llm-cordis-probe';
 /**
  * 注册 mock 服务商。
  *
- * @param ctx - 宿主 Cordis 上下文；服务由 inject 保证在场，`petApi7340` 缺失时只跳过余额注册。
+ * @param ctx - 宿主 Cordis 上下文；服务由 inject 保证在场，`whalebookApi7340` 缺失时只跳过余额注册。
  */
 export function apply(ctx) {
   const ids = MOCK_BALANCE_PROVIDERS.map((p) => p.id);
@@ -69,7 +69,7 @@ export function apply(ctx) {
   }
 
   // 3) 余额注册表：选中之后能查到余额
-  const balance = ctx.get('petApi7340', false)?.balance;
+  const balance = ctx.get('whalebookApi7340', false)?.balance;
   if (!balance) return;
   for (const def of MOCK_BALANCE_PROVIDERS) {
     try {
@@ -81,7 +81,7 @@ export function apply(ctx) {
 
   // 4) 语音：默认关闭，打开后 register 一个「固定提示音」的合成实现。
   // 注册在宿主、按钮在页面，两半没有直接通道，所以额外开一个最小路由给页面点。
-  const voice = ctx.get('petApi7340', false)?.voice;
+  const voice = ctx.get('whalebookApi7340', false)?.voice;
   if (!voice) return;
   /** 已打开的注销函数；null = 当前关闭。 */
   let disposeVoice = null;

@@ -23,7 +23,7 @@ DSH 设置 → 「桌宠配置」：
 
 ## 方式二：config.jsonc（单一来源）
 
-插件包内 `dsh-pet/assets/config.jsonc` 的 `pets` 数组定义**默认宠物**：
+插件包内 `dsh-whalebook/assets/config.jsonc` 的 `pets` 数组定义**默认宠物**：
 
 ```jsonc
 "pets": [
@@ -33,11 +33,11 @@ DSH 设置 → 「桌宠配置」：
 
 - 每只宠物：`id`（标识）／`size`（宽度 px）／`balanceEnabled`（是否启用余额功能，必填布尔）／`display`（web/desktop/both/none，必填，见上）／`position`（corner 四角之一 + marginX/marginY 边距）
 - 余额刷新周期：`eventsRefreshSec.balance`（秒）——余额数据刷新与余额动画触发的间隔，启动时立即触发一次，之后按此周期循环（默认 1800）
-- 设置页的修改保存到用户层 `$DSH_HOME/dsh-pet/main-config.jsonc`（**完整宠物列表**，覆盖包内默认）；「同步」把包内 `config.jsonc` 原文整份写入该文件（等价于回落默认，但文件保留下来、可直接编辑）
+- 设置页的修改保存到用户层 `$DSH_HOME/dsh-whalebook/main-config.jsonc`（**完整宠物列表**，覆盖包内默认）；「同步」把包内 `config.jsonc` 原文整份写入该文件（等价于回落默认，但文件保留下来、可直接编辑）
 
 ## 方式三：手动编辑配置文件（高级，任意自由配置）
 
-用户层配置文件位于 `$DSH_HOME/dsh-pet/main-config.jsonc`。**它和包内默认配置是同一套格式**——想改什么直接照着 `assets/config.jsonc` 的结构写即可，写错的字段/缺失的字段回落默认，无需（也无法）写完整份。设置页「同步」可直接生成这份完整文件（原文复制包内 `config.jsonc`，注释齐全）：
+用户层配置文件位于 `$DSH_HOME/dsh-whalebook/main-config.jsonc`。**它和包内默认配置是同一套格式**——想改什么直接照着 `assets/config.jsonc` 的结构写即可，写错的字段/缺失的字段回落默认，无需（也无法）写完整份。设置页「同步」可直接生成这份完整文件（原文复制包内 `config.jsonc`，注释齐全）：
 
 | 字段                   | 作用                                                                                    | 格式与默认一致即可         |
 | ---------------------- | --------------------------------------------------------------------------------------- | -------------------------- |
@@ -54,7 +54,7 @@ DSH 设置 → 「桌宠配置」：
 方式一~三都只调整**默认宠物的实例**（数量/大小/位置），动画池始终是全局一份。要添加**全新种类的宠物**（独立动画池 + 自己的素材），在用户数据根下建 `pet/` 目录：
 
 ```
-$DSH_HOME/dsh-pet/
+$DSH_HOME/dsh-whalebook/
 ├─ main-config.jsonc           ← 主宠物配置（现有，不动）
 ├─ main-animation/webm/*.webm  ← 主宠物素材（现有，只属于 main）
 └── pet/

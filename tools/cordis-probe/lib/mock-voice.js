@@ -1,7 +1,7 @@
 /**
  * Mock 语音实现：把一段内置提示音当作"合成结果"返回。
  *
- * 存在意义是验证 `petApi7340.voice.register` 这条第三方注册入口——不联网、不依赖系统语音引擎，
+ * 存在意义是验证 `whalebookApi7340.voice.register` 这条第三方注册入口——不联网、不依赖系统语音引擎，
  * 开关打开后 `POST /voice/speak` 会改走这里，点一下就听见一声「嘀」，说明链路通了。
  * 默认不注册：开关由本仓库的 `/cordis-probe-voice` 路由控制（见 ./voice-route.js）。
  * @module dsh-cordis-probe/mock-voice

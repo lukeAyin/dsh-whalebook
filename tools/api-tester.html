@@ -1338,7 +1338,7 @@
               <div class="ctl">
                 <button type="button" class="btn" id="mv-pose">读实况</button>
                 <span class="hint" id="mv-pose-result">
-                  桌面端才有；网页端走页面内 Cordis 服务 <span class="mono">petApi7340</span>
+                  桌面端才有；网页端走页面内 Cordis 服务 <span class="mono">whalebookApi7340</span>
                 </span>
               </div>
             </div>
@@ -1445,7 +1445,7 @@
             <details class="desc">
               <summary>以外部程序身份写入一档状态；任务文案可省略或清空</summary>
               <div class="desc-body">
-                模拟 Codex 之类的外部调用方：<span class="mono">POST /dsh-pet-7340/work-status</span>，
+                模拟 Codex 之类的外部调用方：<span class="mono">POST /dsh-whalebook-7340/work-status</span>，
                 body <span class="mono">{ state, task? }</span>。写入后桌宠按现有档位播动画，
                 本卡片同时显示宿主回报与 <span class="mono">/state</span> 里的当前快照。
               </div>
@@ -1856,12 +1856,12 @@
     "use strict";
 
     // ═══════════════════════════════════════════════════════════════
-    // 这个页面扮演一个**第三方消费方**：它只用 /dsh-pet-7340 下那套
+    // 这个页面扮演一个**第三方消费方**：它只用 /dsh-whalebook-7340 下那套
     // 公开 HTTP 接口，自己轮询状态、自己比对 counter、自己维护界面。
     // 界面上不出现"端点"这类词——接口是它内部的实现手段。
     // ═══════════════════════════════════════════════════════════════
 
-    const PREFIX = "/dsh-pet-7340";
+    const PREFIX = "/dsh-whalebook-7340";
     const POLL_MS = 1000;
 
     // ── 对话附图：第三方消费方自己截图 / 选图，宿主只收 base64 ──
@@ -3698,7 +3698,7 @@
     /**
      * 把一个文件交给**测试代理自己的** /__upload 收下，拿回一个可访问的地址。
      * 动画与配图两个卡片共用这一条 —— 服务端本来就是通用的（按扩展名定 MIME）。
-     * 上传落在系统临时目录、回读走 /__uploads/，两者都在 dsh-pet 接口前缀之外，宿主全程不参与。
+     * 上传落在系统临时目录、回读走 /__uploads/，两者都在 dsh-whalebook 接口前缀之外，宿主全程不参与。
      */
     async function uploadToTester(file) {
       const upPath = "/__upload?name=" + encodeURIComponent(file.name);
@@ -3978,7 +3978,7 @@
      * 可见效果的动作端点上。
      *
      * **网页端没有这条路**：它的位置天生每个页面一份（两个标签页本来就不同），走页面内的 Cordis
-     * 只读服务 `ctx.get('petApi7340').pose(petId)`——字段与坐标口径完全一致，只是"取"的方式不同。
+     * 只读服务 `ctx.get('whalebookApi7340').pose(petId)`——字段与坐标口径完全一致，只是"取"的方式不同。
      */
     $("mv-pose").addEventListener("click", () => {
       void mvReadPose(false);
@@ -3999,7 +3999,7 @@
       const r = await GET("/pose?pet=" + encodeURIComponent(petId));
       if (!(r.body && r.body.ok)) {
         marker.style.display = "none";
-        if (!silent) res.textContent = "被拒：" + whyOf(r) + "（网页端请用 Cordis 服务 petApi7340）";
+        if (!silent) res.textContent = "被拒：" + whyOf(r) + "（网页端请用 Cordis 服务 whalebookApi7340）";
         return;
       }
       // 夹到框内只是**显示**需要：宠物贴边拖出时中心点可能略出 0~1，接口本身不夹取
