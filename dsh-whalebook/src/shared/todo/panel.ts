@@ -178,6 +178,11 @@ export function mountTodoPanel(options: TodoPanelOptions): TodoPanelMount {
       render();
       armIdle();
     },
+    onEditDraftChange: (draft) => {
+      if (editing === null) return;
+      // 只更新状态、不重渲染：重渲染会把光标移回末尾，打断正在输入的人。
+      editing = { id: editing.id, text: draft.text, due: draft.due };
+    },
   };
 
   /** 重新拉整张清单：修改一律以宿主返回为准，不在本地猜结果。 */

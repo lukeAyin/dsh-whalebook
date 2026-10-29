@@ -57,6 +57,8 @@ export interface TodoListHandlers {
   onSaveEdit: (todo: TodoItem, draft: TodoEditDraft) => void;
   /** 取消编辑。 */
   onCancelEdit: () => void;
+  /** 编辑框内容变化：调用方把草稿记到自己的编辑状态里，避免重渲染丢输入。 */
+  onEditDraftChange: (draft: TodoEditDraft) => void;
 }
 
 /** 删除按钮的二次确认窗口（ms）：超时自动复原，避免「确认」态一直挂着。 */
@@ -224,6 +226,10 @@ function renderEditItem(todo: TodoItem, editing: TodoEditing, handlers: TodoList
   due.type = 'datetime-local';
   due.value = editing.due;
   due.setAttribute('aria-label', '编辑提醒时间（可选）');
+  // 输入即同步草稿：用户编辑到一半时去勾选/新增别的条目，重渲染也不会把已输入内容丢掉。
+  const syncDraft = (): void => handlers.onEditDraftChange({ text: text.value, due: due.value });
+  text.addEventListener('input', syncDraft);
+  due.addEventListener('input', syncDraft);
   const actions = element('div', 'dsh-whalebook-todo-edit-actions');
   const save = element('button', 'dsh-whalebook-todo-save', '保存');
   save.type = 'submit';
