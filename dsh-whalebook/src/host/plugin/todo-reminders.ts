@@ -27,8 +27,8 @@ const BUBBLE_DURATION_MS = 15 * 1000;
 /** 建议气泡停留时长（ms）：接在提醒之后，给用户时间读完。 */
 const SUGGESTION_BUBBLE_DURATION_MS = 20 * 1000;
 
-/** 到期提醒附带建议的概率（配置开关打开后生效）：30%。 */
-export const TODO_SUGGESTION_PROBABILITY = 0.3;
+/** 到期提醒附带建议的概率（配置开关打开后生效）：50%。 */
+export const TODO_SUGGESTION_PROBABILITY = 0.5;
 
 /** 一拍所需的最小能力（与完整输入同形，便于测试替身）。 */
 export interface TodoReminderTickDeps {

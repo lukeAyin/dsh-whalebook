@@ -164,7 +164,7 @@ export interface ClientConfig {
   /** 点击音效开关：true = 点击宠物时播放内置 click-duck.wav（音量 0.5、100ms 内去重），false = 静音。
    *  内置默认 false（默认静音，不突袭既有用户）。只读 main 条目这一份，pet pack 不单独覆盖。 */
   clickSoundEnabled: boolean;
-  /** 待办提醒附带 AI 建议开关：true = 到期提醒有 30% 概率追加一句 ≤30 字的可执行建议；
+  /** 待办提醒附带 AI 建议开关：true = 到期提醒有 50% 概率追加一句 ≤30 字的可执行建议；
    *  生成失败/超时静默回退，不影响正常提醒。默认 false。 */
   todoSuggestionEnabled: boolean;
   /** 桌面模式系统托盘开关：true = 桌面端启动后在通知区域（macOS 为菜单栏）建托盘，列出配置里全部宠物
