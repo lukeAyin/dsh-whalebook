@@ -29,6 +29,7 @@ export interface SaveFields {
   pets: readonly Pet[];
   notificationsEnabled: boolean;
   clickSoundEnabled: boolean;
+  todoSuggestionEnabled: boolean;
   whisperImageEnabled: boolean;
   chatImageEnabled: boolean;
   confineToScreen: boolean;
@@ -63,6 +64,7 @@ export function buildSaveBody(fields: SaveFields): Record<string, unknown> {
     pets: fields.pets,
     notificationsEnabled: fields.notificationsEnabled,
     clickSoundEnabled: fields.clickSoundEnabled,
+    todoSuggestionEnabled: fields.todoSuggestionEnabled,
     whisperImageEnabled: fields.whisperImageEnabled,
     chatImageEnabled: fields.chatImageEnabled,
     confineToScreen: fields.confineToScreen,

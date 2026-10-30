@@ -145,7 +145,16 @@ export function apply(ctx: any): void {
   registerChatCommand({ ctx, chatWithPet, log, publishWhisper, resolveActivePetId });
 
   // 待办提醒：随插件生命周期起停；锁被第三方持有时由 pickReminderSpeaker 跳过该宠物。
-  registerTodoReminders({ ctx, effectivePetList, lock, log, state, todos, waiterCount: () => state.waiterCount() });
+  registerTodoReminders({
+    ctx,
+    effectivePetList,
+    lock,
+    log,
+    state,
+    todos,
+    waiterCount: () => state.waiterCount(),
+    configPaths: setup.configPaths,
+  });
 
   registerLifecycle({
     ctx,

@@ -123,6 +123,8 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
     const [notifyEnabled, setNotifyEnabled] = useState(true);
     // 点击音效开关：同通知开关，随「保存」整包写入；初值 false 是内置默认，加载效应会用成品值覆盖。
     const [clickSound, setClickSound] = useState(false);
+    // 待办提醒附带 AI 建议（全局开关）：默认关；随「保存」写入用户配置。
+    const [todoSuggestion, setTodoSuggestion] = useState(false);
     // 表情包配图开关（全局）：切换只改本地状态，随「保存」一起提交。
     const [whisperImage, setWhisperImage] = useState(false);
     const [chatImage, setChatImage] = useState(false);
@@ -157,6 +159,7 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
         replace(entries);
         if (patch.notificationsEnabled !== undefined) setNotifyEnabled(patch.notificationsEnabled);
         if (patch.clickSoundEnabled !== undefined) setClickSound(patch.clickSoundEnabled);
+        if (patch.todoSuggestionEnabled !== undefined) setTodoSuggestion(patch.todoSuggestionEnabled);
         if (patch.whisperImageEnabled !== undefined) setWhisperImage(patch.whisperImageEnabled);
         if (patch.chatImageEnabled !== undefined) setChatImage(patch.chatImageEnabled);
         if (patch.confineToScreen !== undefined) setConfineScreen(patch.confineToScreen);
@@ -196,6 +199,7 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
     const globalFlags: GlobalFlags = {
       notificationsEnabled: notifyEnabled,
       clickSoundEnabled: clickSound,
+      todoSuggestionEnabled: todoSuggestion,
       whisperImageEnabled: whisperImage,
       chatImageEnabled: chatImage,
       confineToScreen: confineScreen,
@@ -206,6 +210,7 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
     const globalSetters: Record<GlobalFlagKey, (value: boolean) => void> = {
       notificationsEnabled: (value) => void toggleNotify(value),
       clickSoundEnabled: setClickSound,
+      todoSuggestionEnabled: setTodoSuggestion,
       whisperImageEnabled: setWhisperImage,
       chatImageEnabled: setChatImage,
       confineToScreen: setConfineScreen,
@@ -231,6 +236,7 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
         pets: mainPets,
         notificationsEnabled: notifyEnabled,
         clickSoundEnabled: clickSound,
+        todoSuggestionEnabled: todoSuggestion,
         whisperImageEnabled: whisperImage,
         chatImageEnabled: chatImage,
         confineToScreen: confineScreen,

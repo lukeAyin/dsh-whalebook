@@ -19,6 +19,7 @@ export interface MainConfigPatch {
   entryPrompt?: string;
   notificationsEnabled?: boolean;
   clickSoundEnabled?: boolean;
+  todoSuggestionEnabled?: boolean;
   whisperImageEnabled?: boolean;
   chatImageEnabled?: boolean;
   confineToScreen?: boolean;
@@ -67,6 +68,9 @@ export function readMainConfig(merged: MergedConfig): MainConfigPatch | null {
   if (typeof main.whisperPrompt === 'string') patch.entryPrompt = main.whisperPrompt;
   if (typeof main.notificationsEnabled === 'boolean') patch.notificationsEnabled = main.notificationsEnabled;
   if (typeof main.clickSoundEnabled === 'boolean') patch.clickSoundEnabled = main.clickSoundEnabled;
+  if (typeof main.todoSuggestionEnabled === 'boolean') {
+    patch.todoSuggestionEnabled = main.todoSuggestionEnabled;
+  }
   if (typeof main.whisperImageEnabled === 'boolean') patch.whisperImageEnabled = main.whisperImageEnabled;
   if (typeof main.chatImageEnabled === 'boolean') patch.chatImageEnabled = main.chatImageEnabled;
   if (typeof main.confineToScreen === 'boolean') patch.confineToScreen = main.confineToScreen;

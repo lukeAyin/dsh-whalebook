@@ -11,7 +11,7 @@
 //     chatMemoryRounds / whisperModel / chatModel / eventsRefreshSec
 //   · 条目级（每个条目一份：main 一份、每个种类各一份；种类文件顶层可覆盖）：
 //     whisperPrompt / memes / workStatusTexts / animations / animationWeights
-//   · 只读 main（写了也只认 main 条目那份）：notificationsEnabled / eventsRefreshSec.balance
+//   · 只读 main（写了也只认 main 条目那份）：notificationsEnabled / todoSuggestionEnabled / eventsRefreshSec.balance
 // 合并口径：所有顶层字段都是**整段替换**——写了就整段用自己的，缺的子键不会从本文件补回来
 //   （消费端各自兜底：余额周期读不到按 1800、碎碎念按 300）。
 {
@@ -113,6 +113,13 @@
   // 也可在用户配置（main-config.jsonc）顶层覆盖，设置页「全局开关」里的开关写的就是它。
   // 只读 main 条目这一份（pet pack 种类文件不单独覆盖），改动后保存即生效。
   "clickSoundEnabled": false,
+  // ===================== 待办提醒附带建议（全局开关，默认关） =====================
+  // true = 待办到期提醒有 30% 概率在提醒气泡之后，再补一句由 AI 生成的可执行建议。
+  // 建议要求：一句话、≤30 个汉字、只给「今天就能开始的第一步」；生成失败/超时静默回退，
+  // 不会阻塞或吞掉正常提醒。false（默认）= 完全保持原来的提醒行为，不调用模型。
+  // 必填布尔值，缺失即配置错误；也可在用户配置（main-config.jsonc）顶层覆盖，
+  // 设置页「全局开关」里的待办建议开关写的就是它。改动后保存即生效。
+  "todoSuggestionEnabled": false,
   // ===================== 锁定在当前屏幕（根字段，不属于 physics） =====================
   // 多屏用户：true = 宠物只在**当前所在那块屏幕**内活动——
   //   抛掷：只在松手时所在那块屏内弹（屏缝当墙，不飞到隔壁屏）；

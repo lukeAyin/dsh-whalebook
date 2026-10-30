@@ -106,6 +106,9 @@ export const zh = {
   clickSoundToggle: '点击音效',
   clickSoundToggleHint:
     '点一下宠物播一声内置音效（assets/sound/click-duck.wav，音量 0.5；100ms 内的连续点击只响一次，多开也不会叠音）。关掉即完全静音。随「保存」写入用户配置。',
+  todoSuggestionToggle: '待办建议',
+  todoSuggestionToggleHint:
+    '待办到期提醒时，有 30% 概率在提醒气泡后再补一句由 AI 生成的可执行建议：一句话、≤30 字，只给「今天就能开始的第一步」。生成失败或超时静默回退，不影响正常提醒。随「保存」写入用户配置。',
   whisperImageToggle: '碎碎念配图',
   whisperImageToggleHint:
     '碎碎念时从表情包池随机抽一张，连同那句话一起显示（图片映射在配置文件顶层 memes）。token：碎碎念本来就每次生成都要调一次模型，配图只是把抽中那张的名称+描述（约 100 字符 / ≈60 token）加进同一次请求，增量可忽略。',
@@ -316,6 +319,9 @@ export const en: Record<Key, string> = {
   clickSoundToggle: 'Click sound',
   clickSoundToggleHint:
     'Plays the built-in click sound (assets/sound/click-duck.wav, volume 0.5) when a pet is clicked; repeated clicks within 100ms play only once, so multiple pets never stack up. Turn it off for silence. Written to the user config together with Save.',
+  todoSuggestionToggle: 'Todo suggestions',
+  todoSuggestionToggleHint:
+    'When a todo is due, there is a 30% chance the reminder is followed by one AI-written, actionable tip: one sentence, at most 30 characters, focused on the first step you can start today. Failures/timeouts silently fall back to the plain reminder. Written to the user config on "Save".',
   whisperImageToggle: 'Whisper images',
   whisperImageToggleHint:
     'Attach one random meme from the pool to each whisper line (image mapping lives in the top-level `memes` config field). Tokens: a whisper already calls the model every cycle, so the image only appends the name + description of that one meme (~100 chars / ~60 tokens) to the same request — negligible.',

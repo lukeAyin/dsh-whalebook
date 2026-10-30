@@ -2,7 +2,7 @@
  * 全局开关卡（src/client/settings/global-card.ts）的契约测试。
  *
  * 两条契约：
- *   1. 六个开关的勾选态来自 `values`，切换回传的是配置字段名（键名错位会静默写坏别的开关）；
+ *   1. 七个开关的勾选态来自 `values`，切换回传的是配置字段名（键名错位会静默写坏别的开关）；
  *   2. 忙时全部禁用，一次切换只回调一次。
  */
 import { describe, test } from 'node:test';
@@ -29,6 +29,7 @@ function flatten(node: unknown): Node[] {
 const allOff: GlobalFlags = {
   notificationsEnabled: false,
   clickSoundEnabled: false,
+  todoSuggestionEnabled: false,
   whisperImageEnabled: false,
   chatImageEnabled: false,
   confineToScreen: false,
@@ -39,17 +40,17 @@ const allOff: GlobalFlags = {
 const boxes = (tree: unknown): Node[] => flatten(tree).filter((node) => node.tag === 'input');
 
 describe('GlobalCard —— 全局开关卡', () => {
-  test('六个开关都在，勾选态来自 values', () => {
+  test('七个开关都在，勾选态来自 values', () => {
     const tree = GlobalCard({
       busy: false,
       values: { ...allOff, notificationsEnabled: true, trayEnabled: true },
       onChange: () => {},
     } as never);
     const found = boxes(tree);
-    assert.equal(found.length, 6);
+    assert.equal(found.length, 7);
     assert.deepEqual(
       found.map((box) => box.props.checked),
-      [true, false, false, false, false, true],
+      [true, false, false, false, false, false, true],
     );
   });
 
@@ -68,6 +69,7 @@ describe('GlobalCard —— 全局开关卡', () => {
       [
         'notificationsEnabled',
         'clickSoundEnabled',
+        'todoSuggestionEnabled',
         'whisperImageEnabled',
         'chatImageEnabled',
         'confineToScreen',

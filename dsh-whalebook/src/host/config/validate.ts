@@ -139,6 +139,9 @@ export function topFieldValid(key: string, value: unknown): boolean {
     case 'clickSoundEnabled':
       // 点击音效开关（全局布尔，只读 main 条目）：与 notificationsEnabled 同一套校验
       return typeof value === 'boolean';
+    case 'todoSuggestionEnabled':
+      // 待办提醒附带 AI 建议（全局布尔）：只决定提醒时要不要按概率请求建议
+      return typeof value === 'boolean';
     case 'whisperImageEnabled':
       return typeof value === 'boolean';
     case 'voiceEnabled':

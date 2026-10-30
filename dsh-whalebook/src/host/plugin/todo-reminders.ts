@@ -6,8 +6,12 @@
  * 没有可见宠物或被第三方占用时跳过且不推进——条件满足后的下一拍立刻补上，这次提醒不会丢。
  * @module dsh-whalebook/src/host/plugin/todo-reminders
  */
+import { readAllConfig } from '../config.ts';
 import { pickReminder, reminderText } from '../todo/policy.ts';
+import { generateTodoSuggestion } from '../todo/suggestion.ts';
 import type { TodoStore } from '../todo/store.ts';
+import type { ConfigPaths } from '../config.ts';
+import type { TodoRecord } from '../todo/types.ts';
 import type { LockStore } from '../lock.ts';
 import type { PollStateStore } from '../state.ts';
 import type { HostSetup } from './setup.ts';
@@ -19,6 +23,12 @@ const TICK_MS = 60 * 1000;
 
 /** 提醒气泡停留时长（ms）：比默认 10 秒久一点，欠着的事值得多看两眼。 */
 const BUBBLE_DURATION_MS = 15 * 1000;
+
+/** 建议气泡停留时长（ms）：接在提醒之后，给用户时间读完。 */
+const SUGGESTION_BUBBLE_DURATION_MS = 20 * 1000;
+
+/** 到期提醒附带建议的概率（配置开关打开后生效）：30%。 */
+export const TODO_SUGGESTION_PROBABILITY = 0.3;
 
 /** 一拍所需的最小能力（与完整输入同形，便于测试替身）。 */
 export interface TodoReminderTickDeps {
@@ -36,6 +46,12 @@ export interface TodoReminderTickDeps {
   now?: () => number;
   /** 是否有端在线（长轮询在挂）。没有就不提醒：写进 S 也没人看见，还白白推进了排期。 */
   hasListener?: () => boolean;
+  /** 待办建议开关（来自配置）；缺省 false。 */
+  suggestionEnabled?: () => boolean;
+  /** 概率源；测试注入固定值，缺省 Math.random。 */
+  random?: () => number;
+  /** 生成建议；返回 null = 失败/不可用。缺省不生成。 */
+  suggest?: (todo: TodoRecord, speaker: string) => Promise<string | null>;
 }
 
 /** 提醒循环的输入。 */
@@ -44,6 +60,8 @@ export type TodoReminderInput = {
   ctx: HostContext;
   /** 当前挂着长轮询的端数量：>0 表示有人能看到这次提醒。 */
   waiterCount: () => number;
+  /** 读取配置（建议开关）所需的路径集。 */
+  configPaths: ConfigPaths;
 } & Pick<PetLookup, 'lock'> &
   Pick<TodoReminderTickDeps, 'todos' | 'effectivePetList' | 'state' | 'log'>;
 
@@ -90,6 +108,24 @@ export async function tickTodoReminders(deps: TodoReminderTickDeps): Promise<voi
   // 只记 id 与剩余时长：待办正文是用户内容，不进日志。
   const remainingSec = due.todo.dueAt === null ? 0 : Math.round((due.todo.dueAt - now) / 1000);
   deps.log.info(`[dsh-whalebook] 待办提醒 todo=${due.todo.id} pet=${speaker} 剩余=${remainingSec}s`);
+
+  // 建议是提醒之后的增强，不是提醒本身：先发提醒，再按开关 + 概率请求；失败静默跳过。
+  if (deps.suggestionEnabled?.() !== true || deps.suggest === undefined) return;
+  if ((deps.random?.() ?? Math.random()) >= TODO_SUGGESTION_PROBABILITY) return;
+  try {
+    const suggestion = await deps.suggest(due.todo, speaker);
+    if (suggestion === null || suggestion === '') return;
+    // 生成期间宠物可能被移走/被第三方占用：这时不再插一条建议气泡。
+    const stillVisible = deps.effectivePetList().some((pet) => String(pet.id) === speaker && pet.display !== 'none');
+    if (!stillVisible || deps.lock.locked(speaker)) return;
+    deps.state.writePet(speaker, 'say', {
+      text: `建议：${suggestion}`,
+      duration: SUGGESTION_BUBBLE_DURATION_MS,
+    });
+    deps.log.info(`[dsh-whalebook] 待办建议 todo=${due.todo.id} pet=${speaker} 字数=${Array.from(suggestion).length}`);
+  } catch (error) {
+    deps.log.warn('[dsh-whalebook] 待办建议生成失败：' + (error instanceof Error ? error.message : String(error)));
+  }
 }
 
 /**
@@ -98,7 +134,16 @@ export async function tickTodoReminders(deps: TodoReminderTickDeps): Promise<voi
  * @param deps - 宿主上下文与一拍所需的能力。
  */
 export function registerTodoReminders(deps: TodoReminderInput): void {
-  const { ctx, effectivePetList, lock, log, state, todos, waiterCount } = deps;
+  const { ctx, effectivePetList, lock, log, state, todos, waiterCount, configPaths } = deps;
+
+  /** 建议开关：读配置失败按关闭处理，绝不让配置问题阻断提醒。 */
+  const suggestionEnabled = (): boolean => {
+    try {
+      return readAllConfig(configPaths).main?.todoSuggestionEnabled === true;
+    } catch {
+      return false;
+    }
+  };
 
   /** 一拍：失败只打日志，不让循环停摆。 */
   const tick = async (): Promise<void> => {
@@ -110,6 +155,8 @@ export function registerTodoReminders(deps: TodoReminderInput): void {
         log,
         state,
         todos,
+        suggestionEnabled,
+        suggest: (todo) => generateTodoSuggestion({ ctx, text: todo.text }),
       });
     } catch (error) {
       log.warn('[dsh-whalebook] 待办提醒失败：' + (error instanceof Error ? error.message : String(error)));

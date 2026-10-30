@@ -12,6 +12,7 @@ import { makeUiKit } from './ui.ts';
 export type GlobalFlagKey =
   | 'notificationsEnabled'
   | 'clickSoundEnabled'
+  | 'todoSuggestionEnabled'
   | 'whisperImageEnabled'
   | 'chatImageEnabled'
   | 'confineToScreen'
@@ -34,6 +35,7 @@ export interface GlobalCardProps {
 const TOGGLES: Array<{ key: GlobalFlagKey; label: string; end?: boolean }> = [
   { key: 'notificationsEnabled', label: 'notifyToggle' },
   { key: 'clickSoundEnabled', label: 'clickSoundToggle' },
+  { key: 'todoSuggestionEnabled', label: 'todoSuggestionToggle' },
   { key: 'whisperImageEnabled', label: 'whisperImageToggle' },
   { key: 'chatImageEnabled', label: 'chatImageToggle' },
   { key: 'confineToScreen', label: 'confineToggle', end: true },

@@ -69,6 +69,7 @@ const BASE = {
   whisperPrompt: '你是桌面宠物',
   chatMemoryRounds: 4,
   notificationsEnabled: true,
+  todoSuggestionEnabled: false,
   eventsRefreshSec: { balance: 1800, whisper: 300 },
   workStatusTexts: [['在干活']],
 };
@@ -354,6 +355,38 @@ describe('saveUserConfig —— 系统托盘开关（trayEnabled）', () => {
   test('请求体带了 → 以请求体为准', () => {
     const out = saveUserConfig({ pets: PETS, trayEnabled: false }, { trayEnabled: true }) as Record<string, unknown>;
     assert.equal(out.trayEnabled, false);
+  });
+});
+
+describe('saveUserConfig —— 待办建议开关（todoSuggestionEnabled）', () => {
+  test('非法值整包拒绝（与其它全局布尔同口径）', () => {
+    assert.equal(saveUserConfig({ pets: PETS, todoSuggestionEnabled: 'true' }, undefined), null);
+    assert.equal(saveUserConfig({ pets: PETS, todoSuggestionEnabled: 1 }, undefined), null);
+  });
+
+  test('请求体没带 → 透传磁盘旧值', () => {
+    const out = saveUserConfig({ pets: PETS }, { todoSuggestionEnabled: true }) as Record<string, unknown>;
+    assert.equal(out.todoSuggestionEnabled, true);
+  });
+
+  test('请求体带了 → 以请求体为准', () => {
+    const out = saveUserConfig({ pets: PETS, todoSuggestionEnabled: true }, { todoSuggestionEnabled: false }) as Record<
+      string,
+      unknown
+    >;
+    assert.equal(out.todoSuggestionEnabled, true);
+  });
+});
+
+describe('readAllConfig —— 待办建议开关合并', () => {
+  test('用户层写 true → 成品为 true', () => {
+    const merged = readAllConfig(withBase({}, { todoSuggestionEnabled: true }));
+    assert.equal(merged.main.todoSuggestionEnabled, true);
+  });
+
+  test('用户层写非法值 → 回退内置默认 false', () => {
+    const merged = readAllConfig(withBase({}, { todoSuggestionEnabled: 'yes' }));
+    assert.equal(merged.main.todoSuggestionEnabled, false);
   });
 });
 

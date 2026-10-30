@@ -158,3 +158,51 @@ describe('tickTodoReminders —— 一拍', () => {
     assert.equal(writes[0]?.petId, 'd');
   });
 });
+
+describe('tickTodoReminders —— 提醒附带的实施建议', () => {
+  test('开关开启且概率命中：先提醒，再追加一条建议气泡', async () => {
+    const { deps, writes, marked } = harness({ todos: [todo()] });
+    const seen: string[] = [];
+    await tickTodoReminders({
+      ...deps,
+      suggestionEnabled: () => true,
+      random: () => 0.1,
+      suggest: async (item) => {
+        seen.push(item.id);
+        return '先列出三个要点。';
+      },
+    });
+    assert.equal(writes.length, 2);
+    assert.equal(writes[0]?.leaf, 'say');
+    assert.match(String((writes[0]?.data as { text: string }).text), /交周报/);
+    assert.equal('建议：' + '先列出三个要点。', (writes[1]?.data as { text: string }).text);
+    assert.equal(writes[1]?.petId, 'main');
+    assert.deepEqual(seen, ['todo-1']);
+    assert.equal(marked.length, 1);
+  });
+
+  test('开关关闭 / 概率未命中 / 建议为空：都只保留普通提醒', async () => {
+    for (const overrides of [
+      { suggestionEnabled: () => false, random: () => 0.1 },
+      { suggestionEnabled: () => true, random: () => 0.9 },
+      { suggestionEnabled: () => true, random: () => 0.1, suggest: async () => null },
+    ]) {
+      const { deps, writes } = harness({ todos: [todo()] });
+      await tickTodoReminders({ ...deps, ...overrides });
+      assert.equal(writes.length, 1, JSON.stringify(overrides));
+    }
+  });
+
+  test('建议生成抛错：提醒已发出，异常不外溢', async () => {
+    const { deps, writes } = harness({ todos: [todo()] });
+    await tickTodoReminders({
+      ...deps,
+      suggestionEnabled: () => true,
+      random: () => 0.1,
+      suggest: async () => {
+        throw new Error('模型超时');
+      },
+    });
+    assert.equal(writes.length, 1);
+  });
+});
