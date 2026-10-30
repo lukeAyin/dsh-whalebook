@@ -103,7 +103,8 @@ export async function tickTodoReminders(deps: TodoReminderTickDeps): Promise<voi
   if (due === null) return;
   const speaker = pickReminderSpeaker(deps.effectivePetList(), (petId) => deps.lock.locked(petId));
   if (speaker === null) return;
-  deps.state.writePet(speaker, 'say', { text: reminderText(due.todo, now), duration: BUBBLE_DURATION_MS });
+  const reminder = reminderText(due.todo, now);
+  deps.state.writePet(speaker, 'say', { text: reminder, duration: BUBBLE_DURATION_MS });
   await deps.todos.markReminded(due.todo.id, now);
   // 只记 id 与剩余时长：待办正文是用户内容，不进日志。
   const remainingSec = due.todo.dueAt === null ? 0 : Math.round((due.todo.dueAt - now) / 1000);
@@ -119,7 +120,8 @@ export async function tickTodoReminders(deps: TodoReminderTickDeps): Promise<voi
     const stillVisible = deps.effectivePetList().some((pet) => String(pet.id) === speaker && pet.display !== 'none');
     if (!stillVisible || deps.lock.locked(speaker)) return;
     deps.state.writePet(speaker, 'say', {
-      text: `建议：${suggestion}`,
+      // 第二条带上原提醒全文：用户一眼能看出这条建议是对哪件事的。
+      text: `${reminder}\n建议：${suggestion}`,
       duration: SUGGESTION_BUBBLE_DURATION_MS,
     });
     deps.log.info(`[dsh-whalebook] 待办建议 todo=${due.todo.id} pet=${speaker} 字数=${Array.from(suggestion).length}`);

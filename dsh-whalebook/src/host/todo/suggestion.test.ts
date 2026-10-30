@@ -64,6 +64,8 @@ describe('generateTodoSuggestion —— 请求与回退', () => {
     assert.equal(options[0]?.sessionId, 'dsh-whalebook');
     assert.equal(options[0]?.temperature, 0.4);
     assert.match(String(options[0]?.system), /不超过30个汉字/);
+    assert.match(String(options[0]?.system), /大肥鱼/);
+    assert.match(String(options[0]?.system), /工作时间/);
     assert.equal(buildSuggestionUserText('写周报'), '待办：写周报\n请给出今天就能开始的第一步。');
   });
 

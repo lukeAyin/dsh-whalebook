@@ -175,7 +175,8 @@ describe('tickTodoReminders —— 提醒附带的实施建议', () => {
     assert.equal(writes.length, 2);
     assert.equal(writes[0]?.leaf, 'say');
     assert.match(String((writes[0]?.data as { text: string }).text), /交周报/);
-    assert.equal('建议：' + '先列出三个要点。', (writes[1]?.data as { text: string }).text);
+    const first = String((writes[0]?.data as { text: string }).text);
+    assert.equal(first + '\n建议：' + '先列出三个要点。', (writes[1]?.data as { text: string }).text);
     assert.equal(writes[1]?.petId, 'main');
     assert.deepEqual(seen, ['todo-1']);
     assert.equal(marked.length, 1);
