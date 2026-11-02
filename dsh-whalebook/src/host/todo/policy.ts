@@ -29,8 +29,20 @@ const OVERDUE_STOP_MS = 7 * DAY_MS;
 /** 距离到期还有这么久之前完全不提醒：一个月的远期事项不值得天天念。 */
 const AHEAD_START_MS = 7 * DAY_MS;
 
-/** 没有截止时间的待办：创建/上次提醒后 24 小时提醒一次，避免「无期限」变成「永远不提醒」。 */
-const UNDATED_INTERVAL_MS = DAY_MS;
+/** 无期限待办的最短提醒间隔：上次提醒（或创建）后至少 24h 才会再次触发。 */
+const UNDATED_MIN_INTERVAL_MS = DAY_MS;
+/** 无期限待办的随机追加窗口：在 24h 基础上再随机 0~24h，即两次间隔落在 [24h, 48h)。 */
+const UNDATED_RANDOM_WINDOW_MS = DAY_MS;
+
+/** 稳定伪随机：同一条待办 + 同一个排期起点得到同一个追加量，避免每个 tick 重抽导致时间抖动。 */
+function undatedJitterMs(todo: TodoRecord, base: number): number {
+  let hash = 2166136261;
+  for (const char of `${todo.id}:${base}`) {
+    hash ^= char.codePointAt(0) ?? 0;
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) % UNDATED_RANDOM_WINDOW_MS;
+}
 
 /** 提醒文案里引用正文的长度上限（码点）：气泡放不下整条待办。 */
 const REMINDER_TEXT_MAX = 18;
@@ -68,8 +80,11 @@ export function reminderIntervalMs(remainingMs: number): number {
  */
 export function nextReminderAt(todo: TodoRecord, now: number): number | null {
   if (todo.done) return null;
-  // 无期限待办没有「越临近越密」的参照，用固定日频兜底：创建满 24h 第一次，之后每 24h 一次。
-  if (todo.dueAt === null) return (todo.lastRemindedAt ?? todo.createdAt) + UNDATED_INTERVAL_MS;
+  // 无期限待办没有「越临近越密」的参照：创建满 24h 后随机触发，之后每次至少间隔 24h。
+  if (todo.dueAt === null) {
+    const base = todo.lastRemindedAt ?? todo.createdAt;
+    return base + UNDATED_MIN_INTERVAL_MS + undatedJitterMs(todo, base);
+  }
   const intervalNow = reminderIntervalMs(todo.dueAt - now);
   if (!Number.isFinite(intervalNow)) return null;
   // 已经提醒过：从上次提醒时刻按当前档位续排。间隔在到期前会逐级缩短，下一次自然提前。
@@ -107,7 +122,7 @@ export function pickReminder(todos: readonly TodoRecord[], now: number): DueRemi
       lastUndatedRemindedAt = Math.max(lastUndatedRemindedAt, todo.lastRemindedAt);
     }
   }
-  const undatedCoolingDown = now - lastUndatedRemindedAt < UNDATED_INTERVAL_MS;
+  const undatedCoolingDown = now - lastUndatedRemindedAt < UNDATED_MIN_INTERVAL_MS;
   let best: DueReminder | null = null;
   for (const todo of todos) {
     if (todo.dueAt === null && undatedCoolingDown) continue;

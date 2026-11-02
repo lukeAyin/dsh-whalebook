@@ -72,11 +72,16 @@ describe('reminderIntervalMs —— 到期越近间隔越短', () => {
 });
 
 describe('nextReminderAt —— 排期', () => {
-  test('已完成 → null；无期限按创建后 24h 起每天一次', () => {
+  test('已完成 → null；无期限创建 24h 后随机触发，间隔不低于 24h', () => {
     assert.equal(nextReminderAt(todo({ done: true }), 0), null);
-    assert.equal(nextReminderAt(todo({ dueAt: null, createdAt: 0 }), 12 * HOUR), DAY);
-    assert.equal(nextReminderAt(todo({ dueAt: null, createdAt: 0 }), DAY), DAY);
-    assert.equal(nextReminderAt(todo({ dueAt: null, createdAt: 0, lastRemindedAt: DAY }), 2 * DAY), 2 * DAY);
+    const first = nextReminderAt(todo({ dueAt: null, createdAt: 0 }), 12 * HOUR);
+    assert.ok(first !== null);
+    assert.ok(first >= DAY && first < 2 * DAY, '第一次落在 24~48h');
+    // 同一个排期起点必须稳定：每次 tick 重算不能抖动
+    assert.equal(nextReminderAt(todo({ dueAt: null, createdAt: 0 }), DAY + 1), first);
+    const next = nextReminderAt(todo({ dueAt: null, createdAt: 0, lastRemindedAt: first }), first);
+    assert.ok(next !== null);
+    assert.ok(next >= first + DAY && next < first + 2 * DAY, '下一次至少隔 24h');
   });
 
   test('从未提醒：按创建那一刻的剩余量排第一次（不是按当前剩余）', () => {
@@ -154,6 +159,16 @@ describe('pickReminder —— 一拍只挑最急的一条', () => {
   test('没有到点的 → null', () => {
     const now = 100 * HOUR;
     assert.equal(pickReminder([todo({ dueAt: now + DAY, createdAt: now })], now), null);
+  });
+
+  test('无期限待办：24 小时内最多提醒一条', () => {
+    const list = [todo({ id: 'a', dueAt: null, createdAt: 0 }), todo({ id: 'b', dueAt: null, createdAt: 1 * HOUR })];
+    const first = pickReminder(list, 3 * DAY);
+    assert.ok(first !== null);
+    const reminded = list.map((item) => (item.id === first.todo.id ? { ...item, lastRemindedAt: 3 * DAY } : item));
+    // 刚提醒过 → 接下来 24h 不再提醒任何无期限待办。
+    assert.equal(pickReminder(reminded, 3 * DAY + HOUR), null);
+    assert.ok(pickReminder(reminded, 4 * DAY) !== null);
   });
 });
 
