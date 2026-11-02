@@ -72,9 +72,11 @@ describe('reminderIntervalMs —— 到期越近间隔越短', () => {
 });
 
 describe('nextReminderAt —— 排期', () => {
-  test('已完成 / 无期限 → null', () => {
+  test('已完成 → null；无期限按创建后 24h 起每天一次', () => {
     assert.equal(nextReminderAt(todo({ done: true }), 0), null);
-    assert.equal(nextReminderAt(todo({ dueAt: null }), 0), null);
+    assert.equal(nextReminderAt(todo({ dueAt: null, createdAt: 0 }), 12 * HOUR), DAY);
+    assert.equal(nextReminderAt(todo({ dueAt: null, createdAt: 0 }), DAY), DAY);
+    assert.equal(nextReminderAt(todo({ dueAt: null, createdAt: 0, lastRemindedAt: DAY }), 2 * DAY), 2 * DAY);
   });
 
   test('从未提醒：按创建那一刻的剩余量排第一次（不是按当前剩余）', () => {

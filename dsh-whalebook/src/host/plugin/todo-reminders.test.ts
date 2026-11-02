@@ -152,6 +152,13 @@ describe('tickTodoReminders —— 一拍', () => {
     assert.equal(marked.length, 0);
   });
 
+  test('无期限待办创建满 24h 后也会提醒', async () => {
+    const { deps, writes } = harness({ todos: [todo({ dueAt: null, createdAt: NOW - 2 * 24 * 60 * MINUTE })] });
+    await tickTodoReminders(deps);
+    assert.equal(writes.length, 1);
+    assert.match(String((writes[0]?.data as { text: string }).text), /还没设截止时间/);
+  });
+
   test('只有桌面端宠物时也能提醒', async () => {
     const { deps, writes } = harness({ todos: [todo()], pets: [pet('d', 'desktop')] });
     await tickTodoReminders(deps);

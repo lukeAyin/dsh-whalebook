@@ -29,6 +29,9 @@ const OVERDUE_STOP_MS = 7 * DAY_MS;
 /** 距离到期还有这么久之前完全不提醒：一个月的远期事项不值得天天念。 */
 const AHEAD_START_MS = 7 * DAY_MS;
 
+/** 没有截止时间的待办：创建/上次提醒后 24 小时提醒一次，避免「无期限」变成「永远不提醒」。 */
+const UNDATED_INTERVAL_MS = DAY_MS;
+
 /** 提醒文案里引用正文的长度上限（码点）：气泡放不下整条待办。 */
 const REMINDER_TEXT_MAX = 18;
 
@@ -61,10 +64,12 @@ export function reminderIntervalMs(remainingMs: number): number {
  *
  * @param todo - 单条待办。
  * @param now - 当前时刻（epoch ms）。
- * @returns 下一次提醒时刻；已完成、无期限或已过提醒阶段时为 null。
+ * @returns 下一次提醒时刻；已完成或已过提醒阶段时为 null。
  */
 export function nextReminderAt(todo: TodoRecord, now: number): number | null {
-  if (todo.done || todo.dueAt === null) return null;
+  if (todo.done) return null;
+  // 无期限待办没有「越临近越密」的参照，用固定日频兜底：创建满 24h 第一次，之后每 24h 一次。
+  if (todo.dueAt === null) return (todo.lastRemindedAt ?? todo.createdAt) + UNDATED_INTERVAL_MS;
   const intervalNow = reminderIntervalMs(todo.dueAt - now);
   if (!Number.isFinite(intervalNow)) return null;
   // 已经提醒过：从上次提醒时刻按当前档位续排。间隔在到期前会逐级缩短，下一次自然提前。
@@ -89,14 +94,23 @@ export interface DueReminder {
  * 从清单里挑出「最该现在提醒」的一条。
  *
  * 一拍最多提醒一条：多条同时到期时按提醒时刻先后，再按到期先后（更急的优先）。
+ * 无期限待办另加一条全局冷却：24 小时内最多提醒一条，避免多条无期限任务每天同时刷屏。
  *
  * @param todos - 全部待办。
  * @param now - 当前时刻（epoch ms）。
  * @returns 命中的待办；没有到点的返回 null。
  */
 export function pickReminder(todos: readonly TodoRecord[], now: number): DueReminder | null {
+  let lastUndatedRemindedAt = Number.NEGATIVE_INFINITY;
+  for (const todo of todos) {
+    if (todo.dueAt === null && !todo.done && todo.lastRemindedAt !== null) {
+      lastUndatedRemindedAt = Math.max(lastUndatedRemindedAt, todo.lastRemindedAt);
+    }
+  }
+  const undatedCoolingDown = now - lastUndatedRemindedAt < UNDATED_INTERVAL_MS;
   let best: DueReminder | null = null;
   for (const todo of todos) {
+    if (todo.dueAt === null && undatedCoolingDown) continue;
     const at = nextReminderAt(todo, now);
     if (at === null || at > now) continue;
     if (best === null || at < best.at) {
@@ -135,13 +149,14 @@ export function truncateTodoText(text: string, max: number): string {
 /**
  * 一条提醒的气泡文案。
  *
- * @param todo - 有期限且未完成的待办。
+ * @param todo - 未完成的待办（有期限或无期限）。
  * @param now - 当前时刻（epoch ms），用于判断还剩多久。
  * @returns 一句可以直接说出口的提醒。
  */
 export function reminderText(todo: TodoRecord, now: number): string {
   const label = truncateTodoText(todo.text, REMINDER_TEXT_MAX);
-  const dueAt = todo.dueAt ?? now;
+  if (todo.dueAt === null) return `「${label}」还没设截止时间，记得安排一下～`;
+  const dueAt = todo.dueAt;
   if (dueAt <= now) {
     // 刚过点不到一分钟不说「逾期 1 分钟」——那只是四舍五入，读起来像迟到了很久。
     if (now - dueAt < MINUTE_MS) return `「${label}」到点啦，记得处理`;
