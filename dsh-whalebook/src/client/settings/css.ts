@@ -64,6 +64,8 @@ const SETTINGS_CSS = [
   '.dsh-whalebook-cfg__flabel{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--dsw-alias-label-secondary)}',
 
   '.dsh-whalebook-cfg__inp{box-sizing:border-box;width:100%;min-height:28px;padding:4px 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;outline:none}',
+  '.dsh-whalebook-cfg__row{display:flex;align-items:center;gap:8px;min-width:0}',
+  '.dsh-whalebook-cfg__row .dsh-whalebook-cfg__inp{flex:1 1 auto;min-width:0}',
   '.dsh-whalebook-cfg__inp:focus{border-color:var(--dsw-alias-state-business-primary)}',
   '.dsh-whalebook-cfg__inp:disabled{color:var(--dsw-alias-label-tertiary);cursor:default}',
 
