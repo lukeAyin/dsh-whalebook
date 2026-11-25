@@ -10,7 +10,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { CORNER_SET, isValidPetId, PET_DISPLAY_SET } from './constants.ts';
 import type { ConfigPaths } from './constants.ts';
-import { fontValid, modelSelectionValid, physicsValid, topFieldValid } from './validate.ts';
+import { fontValid, modelSelectionValid, physicsValid, selectionShortcutValid, topFieldValid } from './validate.ts';
 
 /**
  * 保存用户层（PUT /config）：接受 pets + 全局开关 + physics / font / 两个模型 / 对话参数。
@@ -89,6 +89,10 @@ export function saveUserConfig(
   if (cse !== undefined && typeof cse !== 'boolean') return null;
   const tse = o.todoSuggestionEnabled;
   if (tse !== undefined && typeof tse !== 'boolean') return null;
+  // 全局划词快捷键（main 级单组）：传了就整段校验（布尔开关 + 非空 accelerator/prompt），
+  // 没传走下方透传保留；与 physics/font 同口径，不做「缺子键补默认」。
+  const selectionShortcut = o.selectionShortcut;
+  if (selectionShortcut !== undefined && !selectionShortcutValid(selectionShortcut)) return null;
   const wie = o.whisperImageEnabled;
   if (wie !== undefined && typeof wie !== 'boolean') return null;
   const cie = o.chatImageEnabled;
@@ -140,6 +144,14 @@ export function saveUserConfig(
   if (ne !== undefined) outConfig.notificationsEnabled = ne;
   if (cse !== undefined) outConfig.clickSoundEnabled = cse;
   if (tse !== undefined) outConfig.todoSuggestionEnabled = tse;
+  if (selectionShortcut !== undefined) {
+    const sc = selectionShortcut as Record<string, unknown>;
+    outConfig.selectionShortcut = {
+      enabled: sc.enabled,
+      accelerator: String(sc.accelerator).trim(),
+      prompt: String(sc.prompt).trim(),
+    };
+  }
   if (wie !== undefined) outConfig.whisperImageEnabled = wie;
   if (cie !== undefined) outConfig.chatImageEnabled = cie;
   if (cts !== undefined) outConfig.confineToScreen = cts;
@@ -161,6 +173,7 @@ export function saveUserConfig(
   if (ne !== undefined) bodyOwned.add('notificationsEnabled');
   if (cse !== undefined) bodyOwned.add('clickSoundEnabled');
   if (tse !== undefined) bodyOwned.add('todoSuggestionEnabled');
+  if (selectionShortcut !== undefined) bodyOwned.add('selectionShortcut');
   if (wie !== undefined) bodyOwned.add('whisperImageEnabled');
   if (cie !== undefined) bodyOwned.add('chatImageEnabled');
   if (cts !== undefined) bodyOwned.add('confineToScreen');

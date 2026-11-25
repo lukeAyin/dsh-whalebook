@@ -6,6 +6,7 @@
  * @module dsh-whalebook/src/host/config/validate
  */
 import { FONT_SIZE_MAX, FONT_SIZE_MIN } from '../../shared/fonts.ts';
+import { SELECTION_ACCELERATOR_MAX, SELECTION_PROMPT_MAX } from '../../shared/selection.ts';
 import { isKnownVoice } from '../voice/voices.ts';
 import { FONT_FAMILY_SET } from './constants.ts';
 
@@ -108,6 +109,19 @@ export function modelSelectionValid(value: unknown): boolean {
   return (m.provider.trim() === '') === (m.model.trim() === '');
 }
 
+/** selectionShortcut 段校验：单组全局划词配置——布尔开关、非空 accelerator、非空 prompt。 */
+export function selectionShortcutValid(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const s = value as Record<string, unknown>;
+  if (typeof s.enabled !== 'boolean') return false;
+  if (typeof s.accelerator !== 'string') return false;
+  const accelerator = s.accelerator.trim();
+  if (accelerator.length === 0 || accelerator.length > SELECTION_ACCELERATOR_MAX) return false;
+  if (typeof s.prompt !== 'string') return false;
+  const prompt = s.prompt.trim();
+  return prompt.length > 0 && prompt.length <= SELECTION_PROMPT_MAX;
+}
+
 /** workStatusTexts 段校验：二维数组——外层每项都是非空字符串数组（档位文案，每档可多句随机）；空数组不可用 */
 function workStatusTextsValid(value: unknown): boolean {
   if (!Array.isArray(value) || value.length === 0) return false;
@@ -142,6 +156,9 @@ export function topFieldValid(key: string, value: unknown): boolean {
     case 'todoSuggestionEnabled':
       // 待办提醒附带 AI 建议（全局布尔）：只决定提醒时要不要按概率请求建议
       return typeof value === 'boolean';
+    case 'selectionShortcut':
+      // 全局划词快捷键（main 级单组）：开关 + accelerator + prompt
+      return selectionShortcutValid(value);
     case 'whisperImageEnabled':
       return typeof value === 'boolean';
     case 'voiceEnabled':

@@ -4,6 +4,7 @@
  * 纯类型与常量，无 React / DOM 依赖。
  * @module dsh-whalebook/src/shared/types
  */
+import type { SelectionShortcutConfig } from './selection.ts';
 
 /** 支持的角落。 */
 export type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -167,6 +168,9 @@ export interface ClientConfig {
   /** 待办提醒附带 AI 建议开关：true = 到期提醒有 50% 概率追加一句 ≤30 字的可执行建议；
    *  生成失败/超时静默回退，不影响正常提醒。默认 false。 */
   todoSuggestionEnabled: boolean;
+  /** 全局划词快捷键（main 级单组）：按一次快捷键取选中文字，按 prompt 交给模型并在气泡回答。
+   *  仅桌面模式 + macOS 生效；默认关闭。 */
+  selectionShortcut: SelectionShortcutConfig;
   /** 桌面模式系统托盘开关：true = 桌面端启动后在通知区域（macOS 为菜单栏）建托盘，列出配置里全部宠物
    *  （含 display 为 web/none 的），勾选即可切回桌面；false = 不建。
    *  缺失默认 true。关掉后「把不在桌面的宠物叫回桌面」在桌面侧没有入口，只能走设置页或网页端右键菜单。 */

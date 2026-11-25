@@ -16,6 +16,7 @@ import { createDesktopHelper } from './plugin/desktop-helper.ts';
 import { createBalancePoll } from './plugin/balance-poll.ts';
 import { createChatMemory } from './plugin/chat-memory.ts';
 import { createSessionNotify } from './plugin/session-notify.ts';
+import { createSelectionAnswer } from './selection.ts';
 import { createPetLookup } from './plugin/pet-lookup.ts';
 import { createDownloadReport } from './plugin/download-report.ts';
 import { createWorkStatusBridge } from './plugin/work-status-bridge.ts';
@@ -94,6 +95,7 @@ export function apply(ctx: any): void {
   });
   const { startHelper, stopHelper, markDisposed } = desktopHelper;
 
+  const answerSelection = createSelectionAnswer(ctx);
   const deps: PetRouteDeps = {
     ...setup,
     ...petLookup,
@@ -102,6 +104,7 @@ export function apply(ctx: any): void {
     ...balancePoll,
     ...desktopHelper,
     ...sessionNotify,
+    answerSelection,
     ctx,
     todos,
     // 语音合成：缓存落 userRoot，失败只留日志，不打断宿主

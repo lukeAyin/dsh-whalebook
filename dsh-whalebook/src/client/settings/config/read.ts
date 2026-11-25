@@ -6,6 +6,7 @@
  */
 import { DEFAULT_FONT } from '../../../shared/fonts.ts';
 import { DEFAULT_PHYSICS } from '../../../shared/physics.ts';
+import type { SelectionShortcutConfig } from '../../../shared/selection.ts';
 import type { FontConfig, ModelSelection, Pet, PhysicsParams } from '../../../shared/types.ts';
 
 /** 宿主返回的成品聚合：`main` 是大配置条目，其余键是文件定义的其他宠物条目。 */
@@ -24,6 +25,8 @@ export interface MainConfigPatch {
   chatImageEnabled?: boolean;
   confineToScreen?: boolean;
   trayEnabled?: boolean;
+  /** 全局划词快捷键（main 级单组）；缺省表示这次响应里没有可信值。 */
+  selectionShortcut?: SelectionShortcutConfig;
   /** 语音播报总开关；缺省表示这次响应里没有可信值。 */
   voiceEnabled?: boolean;
   /** 语音音色 id（宿主已按白名单校验，客户端原样展示）。 */
@@ -75,6 +78,20 @@ export function readMainConfig(merged: MergedConfig): MainConfigPatch | null {
   if (typeof main.chatImageEnabled === 'boolean') patch.chatImageEnabled = main.chatImageEnabled;
   if (typeof main.confineToScreen === 'boolean') patch.confineToScreen = main.confineToScreen;
   if (typeof main.trayEnabled === 'boolean') patch.trayEnabled = main.trayEnabled;
+  const selectionShortcut = main.selectionShortcut as Partial<SelectionShortcutConfig> | undefined;
+  if (
+    selectionShortcut &&
+    typeof selectionShortcut === 'object' &&
+    typeof selectionShortcut.enabled === 'boolean' &&
+    typeof selectionShortcut.accelerator === 'string' &&
+    typeof selectionShortcut.prompt === 'string'
+  ) {
+    patch.selectionShortcut = {
+      enabled: selectionShortcut.enabled,
+      accelerator: selectionShortcut.accelerator,
+      prompt: selectionShortcut.prompt,
+    };
+  }
   if (typeof main.voiceEnabled === 'boolean') patch.voiceEnabled = main.voiceEnabled;
   if (typeof main.voiceName === 'string') patch.voiceName = main.voiceName;
   if (main.physics && typeof main.physics === 'object') {

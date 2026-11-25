@@ -5,6 +5,7 @@
  * @module dsh-whalebook/src/client/settings/config/http
  */
 import { ROUTE_PATH } from '../../../shared/constants.ts';
+import type { SelectionShortcutConfig } from '../../../shared/selection.ts';
 import type { FontConfig, ModelSelection, Pet, PhysicsParams } from '../../../shared/types.ts';
 import type { ModelCatalogGroup } from '../picker/index.ts';
 import type { MergedConfig } from './read.ts';
@@ -34,6 +35,8 @@ export interface SaveFields {
   chatImageEnabled: boolean;
   confineToScreen: boolean;
   trayEnabled: boolean;
+  /** 全局划词快捷键（main 级单组）。 */
+  selectionShortcut: SelectionShortcutConfig;
   /** 语音播报总开关。 */
   voiceEnabled: boolean;
   /** 语音音色 id（白名单内的四个之一）。 */
@@ -69,6 +72,7 @@ export function buildSaveBody(fields: SaveFields): Record<string, unknown> {
     chatImageEnabled: fields.chatImageEnabled,
     confineToScreen: fields.confineToScreen,
     trayEnabled: fields.trayEnabled,
+    selectionShortcut: fields.selectionShortcut,
     voiceEnabled: fields.voiceEnabled,
     voiceName: fields.voiceName,
     physics: fields.physics,

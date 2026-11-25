@@ -58,6 +58,7 @@ const { createTray } = require('./main/tray.js');
 const { createWindows } = require('./main/windows.js');
 const { registerIpc } = require('./main/ipc.js');
 const { createDisplaySync } = require('./main/displays.js');
+const { registerSelectionShortcut } = require('./main/selection.js');
 
 /** Linux 指针提供者：仅在 Linux 创建；查询失败时 get() 返回 null（调用方回退 Electron 原生 API） */
 const linuxPointer = process.platform === 'linux' ? createLinuxPointer() : null;
@@ -268,6 +269,8 @@ app.whenReady().then(() => {
 
   linuxPointer?.start();
   petWindows.create();
+  // 全局划词：必须等窗口表建好后再注册；未开启/非 macOS/被占用时模块内部安静处理。
+  registerSelectionShortcut({ petWindows, log: console });
 
   // 合盖/唤醒是任务栏按钮重建最集中的时刻：resume / unlock-screen 后把每只宠物重新摘一次。
   // powerMonitor 只能在 ready 之后使用，所以挂在这里而不是模块顶层。

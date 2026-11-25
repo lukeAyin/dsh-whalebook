@@ -74,4 +74,8 @@ contextBridge.exposeInMainWorld('petBridge', {
   onDisplays(cb) {
     ipcRenderer.on('pet:displays', (e, geo) => cb(geo));
   },
+  // 全局划词：主进程取到选中文字后推来；渲染端负责发宿主路由（主进程不直接走 DSH 请求闸门）。
+  onSelectionText(cb) {
+    ipcRenderer.on('pet:selection-text', (e, payload) => cb(payload));
+  },
 });

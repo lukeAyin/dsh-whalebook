@@ -20,6 +20,7 @@ import { makeFontCard } from './settings/font-card.ts';
 import { makeGlobalCard, type GlobalFlagKey, type GlobalFlags } from './settings/global-card.ts';
 import { makeLoadStatus } from './settings/load-status.ts';
 import { makeModelCard, type ModelFieldKey } from './settings/model-card.ts';
+import { makeSelectionCard } from './settings/selection-card.ts';
 import { makeModelPicker } from './settings/picker/index.ts';
 import { makeVoicePicker } from './settings/picker/voice-picker.ts';
 import { runNotificationTest } from './settings/notify-test.ts';
@@ -35,6 +36,7 @@ import { usePetList } from './settings/use-pet-list.ts';
 import { useRemoteData } from './settings/use-remote-data.ts';
 import { makeUiKit } from './settings/ui.ts';
 import { makeVoiceCard, type VoiceOption } from './settings/voice-card.ts';
+import { DEFAULT_SELECTION_SHORTCUT, type SelectionShortcutConfig } from '../shared/selection.ts';
 
 // 字典与桥的真源都在 settings/ 里：宿主的 locale 注册、容器与测试夹具都经这里取，不各自深路径引用。
 export { NS, zh, en } from './settings/locales.ts';
@@ -64,6 +66,7 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
   const KindTabs = makeKindTabs({ h, t });
   const PetCard = makePetCard(rt);
   const GlobalCard = makeGlobalCard(rt);
+  const SelectionCard = makeSelectionCard(rt);
   const VoiceCard = makeVoiceCard(rt, VoicePicker);
   const FontCard = makeFontCard(rt);
   const ModelCard = makeModelCard(rt, ModelPicker);
@@ -125,6 +128,10 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
     const [clickSound, setClickSound] = useState(false);
     // 待办提醒附带 AI 建议（全局开关）：默认关；随「保存」写入用户配置。
     const [todoSuggestion, setTodoSuggestion] = useState(false);
+    // 全局划词（main 级单组）：默认关；改完随「保存」写入，保存会重启 Helper 重注册快捷键。
+    const [selectionShortcut, setSelectionShortcut] = useState<SelectionShortcutConfig>({
+      ...DEFAULT_SELECTION_SHORTCUT,
+    });
     // 表情包配图开关（全局）：切换只改本地状态，随「保存」一起提交。
     const [whisperImage, setWhisperImage] = useState(false);
     const [chatImage, setChatImage] = useState(false);
@@ -160,6 +167,7 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
         if (patch.notificationsEnabled !== undefined) setNotifyEnabled(patch.notificationsEnabled);
         if (patch.clickSoundEnabled !== undefined) setClickSound(patch.clickSoundEnabled);
         if (patch.todoSuggestionEnabled !== undefined) setTodoSuggestion(patch.todoSuggestionEnabled);
+        if (patch.selectionShortcut !== undefined) setSelectionShortcut({ ...patch.selectionShortcut });
         if (patch.whisperImageEnabled !== undefined) setWhisperImage(patch.whisperImageEnabled);
         if (patch.chatImageEnabled !== undefined) setChatImage(patch.chatImageEnabled);
         if (patch.confineToScreen !== undefined) setConfineScreen(patch.confineToScreen);
@@ -218,8 +226,10 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
     };
     const setGlobalFlag = (key: GlobalFlagKey, value: boolean): void => globalSetters[key](value);
 
-    /** 局部补丁写入：字体与物理参数都是「整段对象 + 改几个字段」。 */
+    /** 局部补丁写入：字体、物理参数与划词配置都是「整段对象 + 改几个字段」。 */
     const patchFont = (patch: Partial<FontConfig>): void => setFont((current) => ({ ...current, ...patch }));
+    const patchSelection = (patch: Partial<SelectionShortcutConfig>): void =>
+      setSelectionShortcut((current) => ({ ...current, ...patch }));
     const patchPhysics = (patch: Partial<PhysicsParams>): void => setPhysics((current) => ({ ...current, ...patch }));
 
     /** 两个模型字段各有一份状态，卡片只回传键名。 */
@@ -241,6 +251,7 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
         chatImageEnabled: chatImage,
         confineToScreen: confineScreen,
         trayEnabled,
+        selectionShortcut,
         voiceEnabled,
         voiceName,
         physics,
@@ -313,6 +324,7 @@ export function makePetConfigSection(rt: SettingsRuntime): FunctionComponent<{ c
           onRemove: requestRemove,
         }),
         h(GlobalCard, { busy, values: globalFlags, onChange: setGlobalFlag }),
+        h(SelectionCard, { busy, value: selectionShortcut, onChange: patchSelection }),
         h(VoiceCard, {
           busy,
           enabled: voiceEnabled,

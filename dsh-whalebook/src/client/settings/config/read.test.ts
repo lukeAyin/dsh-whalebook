@@ -57,6 +57,17 @@ describe('readMainConfig —— 成品聚合 → 表单补丁', () => {
     assert.equal(withFlag?.trayEnabled, false);
     const withSuggestion = readMainConfig({ main: { pets: [], todoSuggestionEnabled: true } });
     assert.equal(withSuggestion?.todoSuggestionEnabled, true);
+    const withSelection = readMainConfig({
+      main: {
+        pets: [],
+        selectionShortcut: { enabled: true, accelerator: 'CommandOrControl+Shift+T', prompt: '翻译' },
+      },
+    });
+    assert.deepEqual(withSelection?.selectionShortcut, {
+      enabled: true,
+      accelerator: 'CommandOrControl+Shift+T',
+      prompt: '翻译',
+    });
   });
 
   test('条目人设原样带出，供「留空时跟随什么」的预览', () => {

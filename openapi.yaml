@@ -1450,6 +1450,64 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
+  /dsh-whalebook-7340/selection:
+    post:
+      tags: [Action]
+      operationId: sendSelection
+      summary: 处理全局划词选中的文字
+      description: |
+        桌面 Helper 的全局快捷键取到选中文字后调用。宿主读取 `selectionShortcut.prompt`，
+        把 `prompt + 选中文字` 交给当前对话模型，再把结果写进桌宠气泡。
+
+        仅桌面模式 + macOS 的自动取词会调用本端点；浏览器端不会主动调用。
+        未开启全局划词（`disabled`）或没有可用的桌宠（`no-pet`）时返回 `{ ok: false }`。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 4000
+                  description: 选中文字；宿主会 trim，空串拒绝。
+      responses:
+        "200":
+          description: |
+            处理结果。**失败也是 200**（`{ ok: false, reason }`）：
+            `bad-request` 文字为空/超长、`disabled` 未开启、`no-pet` 没有可用桌宠、
+            `provider-missing` 没有可用模型、`generate-error` 模型调用失败。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    required: [ok, text]
+                    properties:
+                      ok:
+                        type: boolean
+                        const: true
+                      text:
+                        type: string
+                        description: 模型输出；超长时已按 800 字截断并补省略号。
+                  - $ref: "#/components/schemas/FailureResponse"
+        "400":
+          description: '请求体不是合法 JSON（`reason: invalid-json`）。'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureResponse"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "413":
+          description: '请求体超过 64 KiB（`reason: payload-too-large`）。'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureResponse"
   /dsh-whalebook-7340/chat:
     get:
       tags: [Action]
@@ -2946,6 +3004,8 @@ components:
 
             实况（`GET /pose`）另有一个：`pose-unavailable` 配置上在桌面显示，但还没收到过渲染端
             上报（桌面端没起来 / 刚重启）。
+
+            全局划词另有：`disabled`（`selectionShortcut.enabled` 未开启）、`no-pet`（没有可开口的桌宠）。
 
             回执与第三方菜单另有：`unknown-playback`（编号不存在或已过期）、
             `unknown-owner`（这个 owner 没注册过）。宿主能力缺失是 `unsupported`。

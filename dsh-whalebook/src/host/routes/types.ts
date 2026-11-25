@@ -9,6 +9,7 @@
 import type { ChatMemoryMessage } from '../chat.ts';
 import type { ConfigPaths } from '../config.ts';
 import type { RouteResult } from '../http.ts';
+import type { SelectionAnswer } from '../selection.ts';
 import type { PetImageRef } from '../image-attachment.ts';
 import type { LockStore } from '../lock.ts';
 import type { FileLogger } from '../log-file.ts';
@@ -98,6 +99,10 @@ export interface PetRouteDeps {
   readonly lock: LockStore;
   /** 插件日志出口（文件 + 终端）。 */
   readonly log: FileLogger;
+  /** 当前生效的宠物列表（成品配置拍平）；划词等全局动作据此挑一只开口。 */
+  readonly effectivePetList: () => Record<string, unknown>[];
+  /** 按固定指令处理选中文字；失败返回结构化原因。 */
+  readonly answerSelection: (input: { readonly prompt: string; readonly text: string }) => Promise<SelectionAnswer>;
   /** 宿主上下文的最小结构：路由只用到 logger 与 llm 服务。 */
   readonly ctx: { logger?: { warn?(message: string): void }; llm?: unknown };
   /** 文件宠物目录（`pet/`）。 */

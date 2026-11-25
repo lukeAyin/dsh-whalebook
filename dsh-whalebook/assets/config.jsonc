@@ -11,7 +11,7 @@
 //     chatMemoryRounds / whisperModel / chatModel / eventsRefreshSec
 //   · 条目级（每个条目一份：main 一份、每个种类各一份；种类文件顶层可覆盖）：
 //     whisperPrompt / memes / workStatusTexts / animations / animationWeights
-//   · 只读 main（写了也只认 main 条目那份）：notificationsEnabled / todoSuggestionEnabled / eventsRefreshSec.balance
+//   · 只读 main（写了也只认 main 条目那份）：notificationsEnabled / todoSuggestionEnabled / selectionShortcut / eventsRefreshSec.balance
 // 合并口径：所有顶层字段都是**整段替换**——写了就整段用自己的，缺的子键不会从本文件补回来
 //   （消费端各自兜底：余额周期读不到按 1800、碎碎念按 300）。
 {
@@ -120,6 +120,19 @@
   // 必填布尔值，缺失即配置错误；也可在用户配置（main-config.jsonc）顶层覆盖，
   // 设置页「全局开关」里的待办建议开关写的就是它。改动后保存即生效。
   "todoSuggestionEnabled": false,
+  // ===================== 全局划词快捷键（main 级单组，默认关） =====================
+  // enabled = true 时，桌面 Helper 注册下面的全局快捷键：按一下会模拟 ⌘C 取当前选中的文字，
+  // 把 prompt + 文字交给当前对话模型，结果写进桌宠气泡。
+  // 仅桌面模式 + macOS 生效；首次使用需在「系统设置 → 隐私与安全性 → 辅助功能」里允许
+  // DSH 桌面端（Electron Helper），否则取不到选中文字。
+  // accelerator 用 Electron accelerator 语法（如 CommandOrControl+Shift+T）；被别的应用占用时注册失败，
+  // Helper 会发系统通知。prompt 是固定指令，选中文字会自动附在后面；也可以用 {text} 占位。
+  // 修改后保存会重启桌面 Helper，快捷键随之重新注册。
+  "selectionShortcut": {
+    "enabled": false,
+    "accelerator": "CommandOrControl+Shift+T",
+    "prompt": "请把下面选中的内容翻译成中文，只输出译文："
+  },
   // ===================== 锁定在当前屏幕（根字段，不属于 physics） =====================
   // 多屏用户：true = 宠物只在**当前所在那块屏幕**内活动——
   //   抛掷：只在松手时所在那块屏内弹（屏缝当墙，不飞到隔壁屏）；

@@ -70,6 +70,11 @@ const BASE = {
   chatMemoryRounds: 4,
   notificationsEnabled: true,
   todoSuggestionEnabled: false,
+  selectionShortcut: {
+    enabled: false,
+    accelerator: 'CommandOrControl+Shift+T',
+    prompt: '请把下面选中的内容翻译成中文，只输出译文：',
+  },
   eventsRefreshSec: { balance: 1800, whisper: 300 },
   workStatusTexts: [['在干活']],
 };
@@ -375,6 +380,72 @@ describe('saveUserConfig —— 待办建议开关（todoSuggestionEnabled）', 
       unknown
     >;
     assert.equal(out.todoSuggestionEnabled, true);
+  });
+});
+
+describe('saveUserConfig —— 全局划词快捷键（selectionShortcut）', () => {
+  test('非法形状整包拒绝', () => {
+    assert.equal(saveUserConfig({ pets: PETS, selectionShortcut: 'x' }, undefined), null);
+    assert.equal(
+      saveUserConfig({ pets: PETS, selectionShortcut: { enabled: 'yes', accelerator: 'a', prompt: 'p' } }, undefined),
+      null,
+    );
+    assert.equal(
+      saveUserConfig({ pets: PETS, selectionShortcut: { enabled: true, accelerator: ' ', prompt: 'p' } }, undefined),
+      null,
+    );
+    assert.equal(
+      saveUserConfig({ pets: PETS, selectionShortcut: { enabled: true, accelerator: 'a', prompt: '' } }, undefined),
+      null,
+    );
+  });
+
+  test('请求体没带 → 透传磁盘旧值', () => {
+    const old = { enabled: true, accelerator: 'CommandOrControl+Shift+Y', prompt: '总结' };
+    const out = saveUserConfig({ pets: PETS }, { selectionShortcut: old }) as Record<string, unknown>;
+    assert.deepEqual(out.selectionShortcut, old);
+  });
+
+  test('请求体带了 → 归一化空白并覆盖旧值', () => {
+    const out = saveUserConfig(
+      {
+        pets: PETS,
+        selectionShortcut: { enabled: true, accelerator: '  CommandOrControl+Shift+T  ', prompt: ' 翻译 ' },
+      },
+      undefined,
+    ) as Record<string, unknown>;
+    assert.deepEqual(out.selectionShortcut, {
+      enabled: true,
+      accelerator: 'CommandOrControl+Shift+T',
+      prompt: '翻译',
+    });
+  });
+});
+
+describe('readAllConfig —— 全局划词配置合并', () => {
+  test('用户层整段覆盖 → 成品采用用户值', () => {
+    const merged = readAllConfig(
+      withBase(
+        {},
+        {
+          selectionShortcut: { enabled: true, accelerator: 'CommandOrControl+Shift+Y', prompt: '总结' },
+        },
+      ),
+    );
+    assert.deepEqual(merged.main.selectionShortcut, {
+      enabled: true,
+      accelerator: 'CommandOrControl+Shift+Y',
+      prompt: '总结',
+    });
+  });
+
+  test('用户层非法 → 回退内置默认（关闭）', () => {
+    const merged = readAllConfig(withBase({}, { selectionShortcut: { enabled: 'yes' } }));
+    assert.deepEqual(merged.main.selectionShortcut, {
+      enabled: false,
+      accelerator: 'CommandOrControl+Shift+T',
+      prompt: '请把下面选中的内容翻译成中文，只输出译文：',
+    });
   });
 });
 

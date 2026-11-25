@@ -106,6 +106,18 @@ export const zh = {
   clickSoundToggle: '点击音效',
   clickSoundToggleHint:
     '点一下宠物播一声内置音效（assets/sound/click-duck.wav，音量 0.5；100ms 内的连续点击只响一次，多开也不会叠音）。关掉即完全静音。随「保存」写入用户配置。',
+  selectionTitle: '全局划词',
+  selectionHint:
+    '按一下全局快捷键，取当前应用里选中的文字，按下面这句指令交给模型，结果写进桌宠气泡。仅桌面模式 + macOS 生效；首次使用需授予辅助功能权限。',
+  selectionEnabled: '启用全局划词',
+  selectionEnabledHint: '开启后保存会重启桌面 Helper 并注册快捷键；关闭则完全不注册，也不申请系统权限。',
+  selectionAccelerator: '快捷键',
+  selectionAcceleratorHint:
+    'Electron accelerator 语法，例如 CommandOrControl+Shift+T；保存后由桌面 Helper 注册，被其他应用占用会发系统通知。',
+  selectionPrompt: '固定指令',
+  selectionPromptHint: '选中文字会自动附在指令后面；也可以写 {text} 让文字插在指定位置。',
+  selectionNote:
+    '仅 macOS + 桌面模式。首次按下快捷键时，macOS 会要求在「系统设置 → 隐私与安全性 → 辅助功能」中允许 DSH 桌面端（Electron）；若还提示控制 System Events，也请允许。没有权限就取不到选中文字。',
   todoSuggestionToggle: '待办建议',
   todoSuggestionToggleHint:
     '待办到期提醒时，有 50% 概率在提醒气泡后再补一句由 AI 生成的可执行建议：一句话、≤30 字，只给「今天就能开始的第一步」。生成失败或超时静默回退，不影响正常提醒。随「保存」写入用户配置。',
@@ -319,6 +331,20 @@ export const en: Record<Key, string> = {
   clickSoundToggle: 'Click sound',
   clickSoundToggleHint:
     'Plays the built-in click sound (assets/sound/click-duck.wav, volume 0.5) when a pet is clicked; repeated clicks within 100ms play only once, so multiple pets never stack up. Turn it off for silence. Written to the user config together with Save.',
+  selectionTitle: 'Global selection',
+  selectionHint:
+    'Press a global shortcut to capture the selected text in any app, send it with the instruction below to the model, and show the result in the pet bubble. Desktop mode + macOS only; the first use asks for Accessibility permission.',
+  selectionEnabled: 'Enable global selection',
+  selectionEnabledHint:
+    'Saving with this on restarts the desktop helper and registers the shortcut; off means nothing is registered and no permission is requested.',
+  selectionAccelerator: 'Shortcut',
+  selectionAcceleratorHint:
+    'Electron accelerator syntax, e.g. CommandOrControl+Shift+T; the desktop helper registers it after Save and sends a notification if another app already owns it.',
+  selectionPrompt: 'Instruction',
+  selectionPromptHint:
+    'The selected text is appended automatically; you can also use {text} to place it exactly where you want.',
+  selectionNote:
+    'macOS + desktop mode only. On first use macOS asks you to allow DSH Desktop (Electron) under System Settings → Privacy & Security → Accessibility; if it also asks to control System Events, allow that too. Without permission the selected text cannot be read.',
   todoSuggestionToggle: 'Todo suggestions',
   todoSuggestionToggleHint:
     'When a todo is due, there is a 50% chance the reminder is followed by one AI-written, actionable tip: one sentence, at most 30 characters, focused on the first step you can start today. Failures/timeouts silently fall back to the plain reminder. Written to the user config on "Save".',

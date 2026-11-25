@@ -7,6 +7,7 @@
  */
 import { join } from 'node:path';
 import { ROUTE_PATH } from '../../../shared/constants.ts';
+import { readAllConfig } from '../../config.ts';
 import { PACKAGE_ROOT } from '../../paths.ts';
 import type { DesktopHelperDeps } from './types.ts';
 import type { DesktopPets } from './pets.ts';
@@ -23,7 +24,7 @@ import {
 /** DesktopSpawn的输入。 */
 export type DesktopSpawnInput = Pick<
   DesktopHelperDeps,
-  'ctx' | 'getHandlePetRoute' | 'log' | 'reportDownload' | 'thumbUserRoot'
+  'ctx' | 'getHandlePetRoute' | 'log' | 'reportDownload' | 'thumbUserRoot' | 'configPaths'
 > &
   Pick<DesktopPets, 'getHasDesktopPet' | 'desktopPetList' | 'getTrayOn'>;
 
@@ -53,6 +54,23 @@ export function resolveOpenTarget(siteUrl: string, desktopHost: boolean): OpenTa
 export function createDesktopSpawn(deps: DesktopSpawnInput) {
   const { ctx, getHandlePetRoute, log, reportDownload, thumbUserRoot, getHasDesktopPet, desktopPetList, getTrayOn } =
     deps;
+  const { configPaths } = deps;
+
+  /**
+   * 划词快捷键的 Helper 环境：只传 accelerator，prompt 由宿主路由读同一份配置。
+   * 关闭/非法/读配置失败都返回空串（Helper 不注册）——不能因为读配置失败而拦住整个 Helper。
+   */
+  const selectionShortcutEnv = (): string => {
+    try {
+      const raw = (readAllConfig(configPaths).main as Record<string, unknown> | undefined)?.selectionShortcut;
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return '';
+      const sc = raw as Record<string, unknown>;
+      if (sc.enabled !== true || typeof sc.accelerator !== 'string' || sc.accelerator.trim() === '') return '';
+      return JSON.stringify({ accelerator: sc.accelerator.trim() });
+    } catch {
+      return '';
+    }
+  };
 
   let desktopModeEverActive = false;
 
@@ -110,6 +128,7 @@ export function createDesktopSpawn(deps: DesktopSpawnInput) {
     // 桌面渲染端也从同一份 handlePetRoute 拿成品配置（每只宠物一个局部小窗口；经管道，不走 HTTP——
     // DSH Desktop 2.0.3+ 会拦插件自拉进程的裸 HTTP 请求，浏览器访问闸门只放行带令牌的请求）
     const configUrl = `${origin}${ROUTE_PATH}/config`;
+    const selectionEnv = selectionShortcutEnv();
     helper = new HelperProcess(
       {
         electronPath,
@@ -127,6 +146,8 @@ export function createDesktopSpawn(deps: DesktopSpawnInput) {
           DSH_WHALEBOOK_BRIDGE: '1',
           // 每只桌面宠物一个局部小窗口：透传宠物列表（[{id,size}]）
           DSH_WHALEBOOK_PETS: JSON.stringify(desktopPetList()),
+          // 全局划词（仅桌面模式）：enabled 时才带值；prompt 留在宿主，Helper 只拿 accelerator。
+          ...(selectionEnv ? { DSH_WHALEBOOK_SELECTION_SHORTCUT: selectionEnv } : {}),
         },
         // bridge 协议处理器 = HTTP 路由同一份 handlePetRoute（业务逻辑唯一，两端天然一致）；
         // 形状转换在 ./bridge-response，本模块只管把请求转进去。

@@ -143,5 +143,14 @@ window.addEventListener('resize', () => {
   }
 });
 
+// 全局划词：主进程取到选中文字后推来，渲染端用现有鉴权通道发给宿主；结果由宿主写回气泡。
+if (window.petBridge && typeof window.petBridge.onSelectionText === 'function') {
+  window.petBridge.onSelectionText((payload) => {
+    const text = payload && typeof payload.text === 'string' ? payload.text : '';
+    if (text === '') return;
+    void S.postAction(BASE + '/selection', { text });
+  });
+}
+
 injectAssets();
 void boot();
