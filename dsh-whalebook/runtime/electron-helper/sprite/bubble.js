@@ -49,6 +49,48 @@ Object.assign(PetSprite.prototype, {
     this.tip.classList.toggle('is-on', this.tipOn);
     window.__dshWhalebookDebug.tooltipOn = this.tipOn;
   },
+  /**
+   * 按气泡实测高度重算窗口余量：优先向上长，宠物上方放不下时翻到下方并向下长。
+   *
+   * 只改 margin.t / margin.b（左右余量可能被待办面板外扩），窗口与宠物锚点不动。
+   * 气泡高度变化（换文案、表情包加载、待办面板关闭）后都要再调一次。
+   */
+  syncBubbleMargin() {
+    const visible = this.bubble.classList.contains('is-on');
+    const base = this.baseMargin;
+    if (!visible) {
+      const classChanged = this.bubble.classList.contains('is-below');
+      if (!classChanged && this.margin.t === base.t && this.margin.b === base.b) return;
+      this.bubble.classList.remove('is-below');
+      this.margin.t = base.t;
+      this.margin.b = base.b;
+      this.el.style.top = this.margin.t + 'px';
+      window.__dshWhalebookDebug.winMargin = this.margin;
+      this.sendBounds(this.pos.x, this.pos.y);
+      return;
+    }
+
+    const height = this.bubble.getBoundingClientRect().height;
+    const overlap = this.size * S.BUBBLE_OVERLAP_RATIO;
+    const area = S.resolveRect(WORK_AREAS, this.pos.x + this.halfW, this.pos.y + this.halfH);
+    const aboveSpace = area ? this.pos.y - area.y : Number.POSITIVE_INFINITY;
+    const belowSpace = area ? area.y + area.height - (this.pos.y + this.height) : Number.POSITIVE_INFINITY;
+    const needed = Math.max(0, height - overlap + 2);
+    // 上方够用就保持原样；不够但下方更宽裕时翻下去。两侧都不够时选空间大的一侧，
+    // 至少不会被窗口上沿直接裁掉。
+    const below = needed > aboveSpace && belowSpace >= aboveSpace;
+    const nextT = below ? base.t : Math.max(base.t, needed);
+    const nextB = below ? Math.max(base.b, needed) : base.b;
+    const classChanged = this.bubble.classList.contains('is-below') !== below;
+    if (!classChanged && nextT === this.margin.t && nextB === this.margin.b) return;
+    this.bubble.classList.toggle('is-below', below);
+    this.margin.t = nextT;
+    this.margin.b = nextB;
+    this.el.style.top = this.margin.t + 'px';
+    window.__dshWhalebookDebug.winMargin = this.margin;
+    this.sendBounds(this.pos.x, this.pos.y);
+  },
+
   renderBubble() {
     // 气泡单槽：同一时刻只显示一个（优先级：终态任务 > 碎碎念/对话 > 余额 > 非终态任务）。
     // 终态任务不让位：完成/失败气泡只活 10s，被顶掉就彻底看不到；非终态气泡常驻，让位零损失。
@@ -84,6 +126,7 @@ Object.assign(PetSprite.prototype, {
       // 三者都没有可显示的内容：隐藏（不占位，也就不会挡住任何一层）
       this.bubble.classList.remove('is-on');
       window.__dshWhalebookDebug.lastBubbleTitle = '';
+      this.syncBubbleMargin();
       this.syncInputBusy(); // 气泡没了 → 撤销它的控件矩形与 busy 标记（否则整窗还留着可点区域）
       return;
     }
@@ -95,7 +138,10 @@ Object.assign(PetSprite.prototype, {
       this.bubble.appendChild(line);
     } else if (slot === 'whisper') {
       // 配图（shared 生成的 <img> + 共用样式）：先看图再读话
-      if (whisperImg) this.bubble.appendChild(whisperImg);
+      if (whisperImg) {
+        this.bubble.appendChild(whisperImg);
+        whisperImg.addEventListener('load', () => this.syncBubbleMargin());
+      }
       const line = document.createElement('div');
       line.className = 'pet-bub-row';
       line.textContent = this.whisperView[0]?.text ?? '';
@@ -169,6 +215,12 @@ Object.assign(PetSprite.prototype, {
     }
     this.bubble.classList.add('is-on');
     window.__dshWhalebookDebug.lastBubbleTitle = this.bubble.textContent.slice(0, 60);
+    this.syncBubbleMargin();
+    // 字体异步加载 / 表情包图片解码后高度还会变；下一帧与 fonts.ready 各补一次。
+    window.requestAnimationFrame(() => this.syncBubbleMargin());
+    if (document.fonts && typeof document.fonts.ready?.then === 'function') {
+      void document.fonts.ready.then(() => this.syncBubbleMargin());
+    }
     // 气泡内容/尺寸变了 → 重报控件矩形并同步 busy 标记。这里是所有显隐与换内容的汇聚点。
     this.syncInputBusy();
   },

@@ -108,3 +108,19 @@ export function bubbleTopMarginPx(font: FontConfig | undefined, size: number): n
   const overlap = (Number(size) || 0) * BUBBLE_OVERLAP_RATIO;
   return Math.max(0, Math.ceil(bubbleMaxHeightPx(font, size) - overlap));
 }
+
+/**
+ * 气泡实际高度超出默认两行时，桌面窗口应取的上边距。
+ *
+ * 基础余量保证余额/碎碎念的静态布局；内容更高（长对话、划词结果）时按实测高度向上扩窗，
+ * 否则气泡顶端会被窗口上沿裁掉。多留 2px 避免像素取整贴边。
+ *
+ * @param base - 静态基准上边距（已含窗口最小余量与字号换算）。
+ * @param contentHeightPx - 气泡 `getBoundingClientRect().height`。
+ * @param size - 宠物宽度（CSS px），用于扣掉气泡底边探进宠物的那一段。
+ * @returns 新的上边距；内容不高时保持 base。
+ */
+export function bubbleTopMarginForContent(base: number, contentHeightPx: number, size: number): number {
+  const overlap = (Number(size) || 0) * BUBBLE_OVERLAP_RATIO;
+  return Math.max(Number(base) || 0, Math.ceil(contentHeightPx - overlap + 2));
+}

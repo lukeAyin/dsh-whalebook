@@ -255,6 +255,7 @@ Object.assign(PetSprite.prototype, {
     this.todoExpanded = true;
     window.__dshWhalebookDebug.winMargin = this.margin;
     this.sendBounds(this.pos.x, this.pos.y);
+    this.syncBubbleMargin();
   },
 
   /** 待办面板的锚点：舞台向身体命中区收 80%，避开透明边，别让面板离宠物太远。 */
@@ -279,6 +280,7 @@ Object.assign(PetSprite.prototype, {
     this.todoExpanded = false;
     window.__dshWhalebookDebug.winMargin = this.margin;
     this.sendBounds(this.pos.x, this.pos.y);
+    this.syncBubbleMargin();
   },
 
   // 待办面板开关（与浏览器半侧共用 shared/todo/panel）：贴在身体命中区旁、跟着宠物移动；

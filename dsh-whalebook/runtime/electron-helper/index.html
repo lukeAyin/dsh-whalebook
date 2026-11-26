@@ -125,6 +125,18 @@
         border-top-color: rgba(255, 255, 255, 0.92);
         border-bottom: none;
       }
+      /* 上方空间不足时翻到宠物下方：气泡顶部贴住宠物顶边内侧，尾巴朝上。 */
+      .pet-bubble.is-below {
+        bottom: auto;
+        top: calc(100% - var(--pet-size, 462px) * 0.108);
+      }
+      .pet-bubble.is-below::after {
+        bottom: auto;
+        top: calc(var(--f) * -0.3736);
+        border-top: none;
+        border-bottom: calc(var(--f) * 0.3736) solid transparent;
+        border-bottom-color: rgba(255, 255, 255, 0.92);
+      }
       .pet-bubble.is-on {
         opacity: 1;
       }
