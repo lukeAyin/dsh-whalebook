@@ -14,7 +14,7 @@ export interface FontPreset {
   stack: string;
 }
 
-/** 字体预设清单：顺序即设置页下拉框的显示顺序（第一项为默认）。
+/** 字体预设清单：顺序即设置页下拉框的显示顺序；默认字体见 DEFAULT_FONT。
  *  candy 是唯一随包发布的字体，CSS 名 "ShangshouSoftCandy" 由我们自己起，改名须同步两端的 @font-face。
  *  其余都是系统字体，机器上没装时由字体栈后面的兜底自然回退，不报错也不空白。 */
 export const FONT_PRESETS: FontPreset[] = [
@@ -35,15 +35,15 @@ export const FONT_PRESETS: FontPreset[] = [
 export const FONT_SIZE_MIN = 4;
 export const FONT_SIZE_MAX = 200;
 
-/** font 段默认值（与内置 config.jsonc 的 font 段一致）：462 宽宠物的气泡 21px，且随宠物大小缩放。
- *  不含 font 字段的配置因此仍按既有观感渲染。 */
+/** font 段默认值（与内置 config.jsonc 的 font 段一致）：系统字体，462 宽宠物的气泡 21px。
+ *  默认用系统字体而不是软糖体：小尺寸下软糖体笔画粘连，长文本辨识度低；仍可在设置页换回 candy。 */
 export const DEFAULT_FONT: FontConfig = {
-  family: 'candy',
+  family: 'system',
   size: 21,
   followPet: true,
 };
 
-/** 按 id 取字体栈；id 非法或缺失回退清单首项（软糖体），渲染层不再自行兜底。 */
+/** 按 id 取字体栈；id 非法或缺失回退清单首项，渲染层不再自行兜底。 */
 export function fontStackOf(id: string): string {
   return (FONT_PRESETS.find((p) => p.id === id) ?? FONT_PRESETS[0]).stack;
 }
